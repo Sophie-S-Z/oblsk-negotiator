@@ -1,0 +1,114 @@
+"""
+Q&A mode. Answers a creator's questions before any rate is on the table:
+deliverables, timeline, usage, payment, and anything off-topic. A budget
+question is the signal to move to an offer.
+
+answer_from_brief is deterministic and runs with no network (Colab, tests, and a
+safe fallback). build_qa_llm_prompt is the prompt for the production model, which
+handles open-ended questions in the same voice and never quotes a rate.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+
+
+@dataclass
+class CampaignBrief:
+    """The facts the Q&A layer answers from. Populated from the campaign config in
+    production; defaults here keep the demo runnable."""
+    brand: str = "the brand"
+    product: str = "the product"
+    platform: str = "Instagram"
+    content_type: str = "a Reel"
+    deliverables: str = "one in-feed Reel, 30 to 60 seconds, plus a story frame"
+    timeline: str = "about two weeks from when we lock the brief"
+    usage_rights: str = "6 months of organic usage, no paid whitelisting unless we agree to it"
+    exclusivity: str = "no category exclusivity, you can work with others outside this brand"
+    revisions: str = "one round of revisions, we keep notes light"
+    payment_terms: str = "net-30 after the content goes live, faster pay available"
+    creative_freedom: str = "you have creative control, we share a few talking points and let you run with it"
+    extra_facts: dict = field(default_factory=dict)
+
+
+_TOPIC_KEYWORDS = {
+    "deliverables": ["deliverable", "how many", "what do i", "what would i",
+                     "post", "reel", "video", "story", "content", "make"],
+    "timeline": ["when", "deadline", "due", "timeline", "how long", "turnaround"],
+    "usage_rights": ["usage", "rights", "own", "ownership", "repost", "reuse",
+                     "whitelist", "ads", "boost"],
+    "exclusivity": ["exclusive", "exclusivity", "compete", "competitor", "other brand"],
+    "revisions": ["revision", "edit", "change", "approve", "approval", "feedback"],
+    "payment_terms": ["payment", "invoice", "net-", "net ", "deposit", "upfront",
+                      "paid", "when do i get"],
+    "creative_freedom": ["creative", "script", "say", "freedom", "control",
+                         "talking point", "guideline"],
+    "product": ["product", "brand", "who is", "what is", "about the", "company"],
+    "budget": ["budget", "rate", "how much", "pay me", "fee", "price", "cost",
+               "does this pay"],
+}
+
+
+def classify_question_topic(question: str) -> str:
+    """Best-matching topic, or 'general'. Budget wins on ties so money questions
+    always route to the offer."""
+    q = question.lower()
+    if any(kw in q for kw in _TOPIC_KEYWORDS["budget"]):
+        return "budget"
+    best, best_hits = "general", 0
+    for topic, kws in _TOPIC_KEYWORDS.items():
+        if topic == "budget":
+            continue
+        hits = sum(1 for kw in kws if kw in q)
+        if hits > best_hits:
+            best, best_hits = topic, hits
+    return best
+
+
+def signals_ready_for_offer(question: str) -> bool:
+    return classify_question_topic(question) == "budget"
+
+
+def answer_from_brief(question: str, brief: CampaignBrief) -> str:
+    topic = classify_question_topic(question)
+    if topic == "budget":
+        return ("Good question. Let me put together a number that fits what we are "
+                "asking for and send it right over.")
+    answers = {
+        "deliverables": f"For this one we are looking at {brief.deliverables}.",
+        "timeline": f"Timeline is {brief.timeline}.",
+        "usage_rights": f"On usage, {brief.usage_rights}.",
+        "exclusivity": f"On exclusivity, {brief.exclusivity}.",
+        "revisions": f"For revisions, {brief.revisions}.",
+        "payment_terms": f"On payment, {brief.payment_terms}.",
+        "creative_freedom": f"On the creative, {brief.creative_freedom}.",
+        "product": (f"It is for {brief.brand}, promoting {brief.product}. Happy to "
+                    f"share more from the brief if useful."),
+    }
+    if topic in answers:
+        return answers[topic]
+    if question.strip().lower() in brief.extra_facts:
+        return brief.extra_facts[question.strip().lower()]
+    return ("Happy to help with that. I can walk you through the deliverables, "
+            "timeline, usage, or anything else on your mind, just let me know.")
+
+
+def build_qa_llm_prompt(question: str, brief: CampaignBrief,
+                        thread_history: str = "") -> dict:
+    facts = "\n".join([
+        f"Brand: {brief.brand}", f"Product: {brief.product}",
+        f"Platform: {brief.platform}", f"Deliverables: {brief.deliverables}",
+        f"Timeline: {brief.timeline}", f"Usage rights: {brief.usage_rights}",
+        f"Exclusivity: {brief.exclusivity}", f"Revisions: {brief.revisions}",
+        f"Payment: {brief.payment_terms}", f"Creative: {brief.creative_freedom}"])
+    system = (
+        "You are an experienced influencer-marketing account manager answering a "
+        "creator's question over email or DM. Warm, brief, real. Never reveal or "
+        "imply you are an AI. Use only the campaign facts provided; if you do not "
+        "know something, say you will check. Never quote a rate or budget; if asked "
+        "about money, say you will send a number shortly. Under 90 words.")
+    user = [f"Campaign facts:\n{facts}", f"\nCreator asked: {question}"]
+    if thread_history:
+        user.append(f"\nPrior thread (for tone):\n{thread_history}")
+    user.append("\nWrite only the reply.")
+    return {"system": system, "user": "\n".join(user)}

@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "oblsk-negotiator"
+version = "0.3.0"
+description = "Creator-negotiation agent: prices each deal as a distribution, runs the conversation, keeps a human in the loop."
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24", "scipy>=1.10", "matplotlib>=3.7"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[tool.setuptools]
+packages = ["oblsk_negotiator"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
