@@ -11,7 +11,9 @@ Plus small non-price sweeteners (faster pay, usage rights, whitelisting).
 from __future__ import annotations
 
 from dataclasses import replace
-from .ev_engine import Deal
+from typing import Optional
+from .ev_engine import Deal, Line, Bundle, FormatCatalog
+from .rate_card import RateCard, bundle_discount
 
 
 def flat_offer(total_usd: float, video_count: int = 1) -> Deal:
@@ -57,3 +59,77 @@ LEVER_PITCH = {
     "usage_rights": "we'll keep usage rights to 6 months instead of a longer window",
     "whitelisting": "we can add whitelisting so the content keeps working for you",
 }
+
+
+# ---- multi-format bundle composition ----------------------------------------
+
+def compose_bundle(
+    rate_card: RateCard,
+    catalog: FormatCatalog,
+    *,
+    roi_hurdle: float,
+    primary_fmt: Optional[str] = None,
+    allowed_formats: Optional[list] = None,
+    max_formats: int = 3,
+) -> Optional[Bundle]:
+    """Build the most attractive bundle that still clears Oblsk's ROI hurdle.
+
+    A creator's rate card mixes good-value formats (their list price sits below
+    what the reach is worth to us) and rich ones (priced above it). We want a
+    package the creator will sign, so we price every line at the creator's own
+    list less the *market-standard* discount for that kind of bundle, and we only
+    keep formats where doing so still clears the ROI hurdle. The result reads to
+    the creator as a normal discounted combo, and to us as a margin-positive mix.
+
+    Pure: scores candidates with the same conservative median-based value proxy
+    the negotiator uses for ceilings, never a Monte Carlo. Returns None when no
+    ROI-positive bundle exists at a discount a creator would accept, which is the
+    signal to fall back to a reach-anchored single offer instead of overpaying.
+    """
+    allowed = allowed_formats or rate_card.formats()
+    candidates = [f for f in allowed
+                  if f in rate_card and f in catalog
+                  and rate_card[f] and catalog[f].expected_value_per_unit > 0]
+    if not candidates:
+        return None
+
+    value = {f: catalog[f].expected_value_per_unit for f in candidates}
+    listed = {f: float(rate_card[f]) for f in candidates}
+    # Efficiency = our value per dollar of their asking price. Higher is better.
+    efficiency = {f: value[f] / listed[f] for f in candidates}
+
+    anchor = primary_fmt if primary_fmt in candidates else \
+        max(candidates, key=lambda f: efficiency[f])
+    extras = sorted([f for f in candidates if f != anchor],
+                    key=lambda f: efficiency[f], reverse=True)
+    chosen = [anchor] + extras[:max_formats - 1]
+
+    def roi_proxy(formats: list) -> float:
+        disc = bundle_discount(formats) if len(formats) > 1 else 0.0
+        total_value = sum(value[f] for f in formats)
+        total_cost = sum(listed[f] * (1.0 - disc) for f in formats)
+        return total_value / total_cost if total_cost > 0 else float("inf")
+
+    # Drop the least efficient non-anchor format until the package clears ROI.
+    while len(chosen) > 1 and roi_proxy(chosen) < roi_hurdle:
+        worst = min((f for f in chosen if f != anchor), key=lambda f: efficiency[f])
+        chosen.remove(worst)
+
+    if roi_proxy(chosen) < roi_hurdle:
+        return None  # even the anchor alone is too rich for its reach
+
+    disc = bundle_discount(chosen) if len(chosen) > 1 else 0.0
+    lines = tuple(
+        Line(fmt=f, quantity=1, price_per_unit=round(listed[f] * (1.0 - disc), 2))
+        for f in chosen)
+    return Bundle(lines=lines)
+
+
+def bundle_format_summary(bundle: Bundle) -> str:
+    """Human phrase for the formats in a bundle, e.g. 'an IG Reel, an IG Story,
+    and a TikTok'. Display only."""
+    from .rate_card import FORMAT_LABELS
+    names = [FORMAT_LABELS.get(l.fmt, l.fmt) for l in bundle.lines]
+    if len(names) == 1:
+        return names[0]
+    return ", ".join(names[:-1]) + (" and " + names[-1])

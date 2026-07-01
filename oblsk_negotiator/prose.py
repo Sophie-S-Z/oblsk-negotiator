@@ -12,7 +12,8 @@ from __future__ import annotations
 
 import random
 from .behavior_tree import Decision, Action
-from .ev_engine import Deal
+from .ev_engine import Deal, Bundle
+from .rate_card import FORMAT_LABELS
 
 
 _GREETINGS = ["Hey {name},", "Hi {name},", "{name},", "Hey {name}!"]
@@ -26,7 +27,30 @@ def _money(x: float) -> str:
     return f"${x:,.0f}"
 
 
-def _deal_phrase(d: Deal) -> str:
+def _article(word: str) -> str:
+    return "an" if word[:1].lower() in "aeiou" else "a"
+
+
+def _bundle_phrase(b: Bundle) -> str:
+    """Describe a multi-format bundle by its formats, not a video count: e.g.
+    '$48,600 total for an Instagram Reel, an Instagram Story, and a TikTok video'."""
+    parts = []
+    for line in b.lines:
+        label = FORMAT_LABELS.get(line.fmt, line.fmt)
+        if line.quantity > 1:
+            parts.append(f"{line.quantity}x {label}")
+        else:
+            parts.append(f"{_article(label)} {label}")
+    if len(parts) == 1:
+        items = parts[0]
+    else:
+        items = ", ".join(parts[:-1]) + ", and " + parts[-1]
+    return f"{_money(b.total_usd)} total for {items}"
+
+
+def _deal_phrase(d) -> str:
+    if isinstance(d, Bundle):
+        return _bundle_phrase(d)
     if d.video_count == 1:
         return f"{_money(d.flat_per_video)} for the video"
     return (f"{_money(d.total_usd)} total for {d.video_count} videos "
@@ -49,10 +73,16 @@ def render_template(decision: Decision, creator_name: str = "there",
                 f"thinking {_deal_phrase(decision.deal)}.\n\n{close}")
 
     if a == Action.ESCALATE_BUNDLE:
+        if isinstance(decision.deal, Bundle):
+            pitch = ("Packaging a few formats together gets you in front of the "
+                     "same audience in more than one place, and it is a stronger "
+                     "package for you")
+        else:
+            pitch = ("A few videos tends to perform a lot better than a one-off, "
+                     "and it is a stronger package for you")
         return (f"{g}\n\nTotally hear you on the rate. Here is something that might "
-                f"work better for both of us: {_deal_phrase(decision.deal)}. A few "
-                f"videos tends to perform a lot better than a one-off, and it is a "
-                f"stronger package for you.\n\n{close}")
+                f"work better for both of us: {_deal_phrase(decision.deal)}. {pitch}."
+                f"\n\n{close}")
 
     if a == Action.ADD_SWEETENER:
         from .bundles import LEVER_PITCH

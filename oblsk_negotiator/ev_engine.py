@@ -60,6 +60,122 @@ class Deal:
 DealStructure = Deal  # alias kept for older call sites
 
 
+# ---- multi-format deals -----------------------------------------------------
+# A creator does not sell one homogeneous "video". They sell formats (an IG Reel,
+# an IG Story, a TikTok, a YouTube integration, ...), each with its own rate card
+# price *and* its own reach and conversion. A real deal is therefore a set of
+# priced line items, not a single per-video number. The single-format Deal above
+# is the one-line special case and is left untouched; the types below add the
+# general case the negotiator escalates into when a rate card is on the table.
+
+@dataclass(frozen=True)
+class Line:
+    """One format's contribution to a deal: `quantity` posts of `fmt` at
+    `price_per_unit` each. Price is what *we* pay the creator, not their list
+    price; the gap between the two is what the negotiation closes."""
+    fmt: str
+    quantity: int = 1
+    price_per_unit: float = 0.0
+
+    @property
+    def subtotal(self) -> float:
+        return self.price_per_unit * self.quantity
+
+
+@dataclass(frozen=True)
+class Bundle:
+    """A multi-format deal: several formats, each its own line. Deal-level levers
+    mirror Deal so the rest of the agent treats the two interchangeably.
+
+    Exposes the same surface as Deal (total_usd, video_count, flat_per_video,
+    effective_per_video) so existing consumers (prose, runner metrics, EV) read a
+    Bundle without special-casing. video_count is the total unit count across
+    lines; the per-video figures are blended averages, used only for display."""
+    lines: tuple[Line, ...]
+    usage_rights_months: int = 0
+    whitelisting: bool = False
+    net_terms_days: int = 30
+    deposit_upfront_pct: float = 0.0
+
+    @property
+    def total_usd(self) -> float:
+        return float(sum(l.subtotal for l in self.lines))
+
+    @property
+    def video_count(self) -> int:
+        return int(sum(l.quantity for l in self.lines))
+
+    @property
+    def flat_per_video(self) -> float:
+        n = self.video_count
+        return self.total_usd / n if n else 0.0
+
+    @property
+    def effective_per_video(self) -> float:
+        return self.flat_per_video
+
+    def to_dict(self) -> dict:
+        d = asdict(self)
+        d["kind"] = "bundle"
+        return d
+
+
+@dataclass(frozen=True)
+class FormatSpec:
+    """Our model of one format on one creator: how far a single post reaches
+    (`reach`, a fitted view model) and what a reached viewer is worth (`econ`).
+    This is the value side and is built from the creator's post history and the
+    campaign config, entirely separate from the creator's quoted rate card."""
+    name: str
+    reach: "ViewModel"
+    econ: CreatorEconomics
+
+    @property
+    def expected_value_per_unit(self) -> float:
+        """Conservative (median-based) expected revenue for one post of this
+        format, the same proxy the negotiator uses for ceilings."""
+        return self.reach.median_views * self.econ.revenue_per_view
+
+
+class FormatCatalog:
+    """Name -> FormatSpec for one creator/campaign. The value side of the table;
+    the creator's RateCard (in rate_card.py) is the asking side."""
+
+    def __init__(self, specs: dict[str, FormatSpec]):
+        self.specs = dict(specs)
+
+    def __contains__(self, fmt: str) -> bool:
+        return fmt in self.specs
+
+    def __getitem__(self, fmt: str) -> FormatSpec:
+        return self.specs[fmt]
+
+    def get(self, fmt: str) -> Optional[FormatSpec]:
+        return self.specs.get(fmt)
+
+    def formats(self) -> list[str]:
+        return list(self.specs.keys())
+
+
+def deal_to_dict(deal) -> dict:
+    """Serialize a Deal or Bundle with a kind tag so it round-trips."""
+    if isinstance(deal, Bundle):
+        return deal.to_dict()
+    d = asdict(deal)
+    d["kind"] = "deal"
+    return d
+
+
+def deal_from_dict(d: dict):
+    """Inverse of deal_to_dict. Tolerates legacy dicts with no kind tag (Deal)."""
+    d = dict(d)
+    kind = d.pop("kind", "deal")
+    if kind == "bundle":
+        lines = tuple(Line(**l) for l in d.pop("lines"))
+        return Bundle(lines=lines, **d)
+    return Deal(**d)
+
+
 DistFamily = Literal["lognormal", "pareto_lognorm", "empirical_prior"]
 
 
@@ -192,25 +308,27 @@ class EVResult:
                 f"P(net>0) {self.prob_net_positive:.0%}")
 
 
-def ev_distribution(
-    view_model: ViewModel,
-    deal: Deal,
-    econ: CreatorEconomics,
-    *,
-    n_samples: int = 5000,
-    seed: Optional[int] = None,
-) -> EVResult:
-    """Monte Carlo. For each draw: sample views for every video, turn them into
-    attributed revenue, subtract the fixed cost, record the net. Pure given seed.
-    """
-    rng = np.random.default_rng(seed)
-    k = deal.video_count
-    if k <= 0:
-        raise ValueError("video_count must be >= 1")
+def _simulate_revenue(
+    samplers: list[tuple["ViewModel", int, float]],
+    n_samples: int,
+    rng: np.random.Generator,
+) -> np.ndarray:
+    """Total attributed revenue per Monte-Carlo draw. Each sampler is one format:
+    (view model, unit count, revenue per view). For each draw we sample views for
+    every unit of every format, turn them into revenue at that format's rate, and
+    sum across formats. One shared rng keeps the whole simulation reproducible."""
+    total = np.zeros(n_samples, dtype=float)
+    for view_model, count, rev_per_view in samplers:
+        if count <= 0:
+            continue
+        views = view_model.sample(n_samples * count, rng).reshape(n_samples, count)
+        total += views.sum(axis=1) * rev_per_view
+    return total
 
-    views = view_model.sample(n_samples * k, rng).reshape(n_samples, k)
-    revenue = views.sum(axis=1) * econ.revenue_per_view
-    cost_total = float(deal.total_usd)
+
+def _ev_from_revenue(revenue: np.ndarray, cost_total: float,
+                     deal_dict: dict, notes: str) -> EVResult:
+    """Build an EVResult from a revenue draw array and a fixed, known cost."""
     net = revenue - cost_total
 
     def pct(a, q):
@@ -220,11 +338,57 @@ def ev_distribution(
     return EVResult(
         revenue_p10=pct(revenue, 10), revenue_p50=pct(revenue, 50),
         revenue_p90=pct(revenue, 90), revenue_mean=float(revenue.mean()),
-        cost_total=cost_total,
+        cost_total=float(cost_total),
         net_p10=pct(net, 10), net_p50=pct(net, 50),
         net_p90=pct(net, 90), net_mean=float(net.mean()),
         roi_mean=roi, prob_net_positive=float((net > 0).mean()),
-        deal=asdict(deal), view_model_notes=view_model.notes)
+        deal=deal_dict, view_model_notes=notes)
+
+
+def ev_distribution(
+    view_model: ViewModel,
+    deal: Deal,
+    econ: CreatorEconomics,
+    *,
+    n_samples: int = 5000,
+    seed: Optional[int] = None,
+) -> EVResult:
+    """Monte Carlo for a single-format flat deal. For each draw: sample views for
+    every video, turn them into attributed revenue, subtract the fixed cost,
+    record the net. Pure given seed.
+    """
+    if deal.video_count <= 0:
+        raise ValueError("video_count must be >= 1")
+    rng = np.random.default_rng(seed)
+    revenue = _simulate_revenue(
+        [(view_model, deal.video_count, econ.revenue_per_view)], n_samples, rng)
+    return _ev_from_revenue(revenue, float(deal.total_usd),
+                            asdict(deal), view_model.notes)
+
+
+def ev_bundle(
+    catalog: FormatCatalog,
+    bundle: Bundle,
+    *,
+    n_samples: int = 5000,
+    seed: Optional[int] = None,
+) -> EVResult:
+    """Monte Carlo for a multi-format deal. Each line draws from its own format's
+    reach model and converts at its own rate; the cost is the fixed bundle total.
+    Same heavy-tailed core as the single-format path, just summed over formats."""
+    if not bundle.lines:
+        raise ValueError("bundle has no lines")
+    missing = [l.fmt for l in bundle.lines if l.fmt not in catalog]
+    if missing:
+        raise ValueError(f"no FormatSpec for {missing!r} in catalog")
+    rng = np.random.default_rng(seed)
+    samplers = [(catalog[l.fmt].reach, l.quantity, catalog[l.fmt].econ.revenue_per_view)
+                for l in bundle.lines]
+    revenue = _simulate_revenue(samplers, n_samples, rng)
+    notes = "; ".join(f"{l.fmt}x{l.quantity}: {catalog[l.fmt].reach.notes}"
+                      for l in bundle.lines)
+    return _ev_from_revenue(revenue, float(bundle.total_usd),
+                            bundle.to_dict(), notes)
 
 
 def synthetic_tier_prior(tier_median: float, sigma: float = 0.8,

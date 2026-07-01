@@ -11,6 +11,7 @@ handles open-ended questions in the same voice and never quotes a rate.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Optional
 
 
 @dataclass
@@ -28,6 +29,8 @@ class CampaignBrief:
     revisions: str = "one round of revisions, we keep notes light"
     payment_terms: str = "net-30 after the content goes live, faster pay available"
     creative_freedom: str = "you have creative control, we share a few talking points and let you run with it"
+    primary_format: Optional[str] = None      # the format the campaign opens on
+    allowed_formats: Optional[list] = None     # formats the agent may bundle in
     extra_facts: dict = field(default_factory=dict)
 
 
@@ -67,6 +70,20 @@ def classify_question_topic(question: str) -> str:
 
 def signals_ready_for_offer(question: str) -> bool:
     return classify_question_topic(question) == "budget"
+
+
+def forward_nudge(questions_answered: int, offer_on_table: bool) -> str:
+    """A short line that moves the conversation toward the next step, sized to how
+    far along the thread is. Appended to a Q&A answer so the agent does not just
+    answer in place: early on it offers to put a proposal together; deeper in it
+    pushes for real numbers; once an offer is out it points back to that offer.
+    Empty string when no nudge fits, so the caller can append unconditionally."""
+    if offer_on_table:
+        return "Let me know if you want me to adjust anything on the offer."
+    if questions_answered <= 1:
+        return "Whenever you are ready, I can put together a proposal that fits."
+    return ("If the fit feels right on your end, I am happy to send over an offer "
+            "so you can see real numbers.")
 
 
 def answer_from_brief(question: str, brief: CampaignBrief) -> str:

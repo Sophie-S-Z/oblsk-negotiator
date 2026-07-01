@@ -13,7 +13,8 @@ from oblsk_negotiator.state import NegotiationState, AutonomyLevel, Phase
 from oblsk_negotiator.behavior_tree import (decide, CreatorMessage, Intent,
                                            CampaignContext, Action,
                                            _requires_approval, _round_money,
-                                           _flat_total, _bundle_total)
+                                           _flat_total, _bundle_total,
+                                           _max_pay_per_video)
 from oblsk_negotiator.qa import (CampaignBrief, classify_question_topic,
                                 answer_from_brief, signals_ready_for_offer)
 from oblsk_negotiator.creator_sim import PERSONAS
@@ -108,11 +109,20 @@ def test_opening_is_single_flat():
     assert d.action == Action.OPENING_FLAT and d.deal.video_count == 1 and s.flat_offer_made
 
 
-def test_flat_rejected_escalates_to_bundle():
+def test_flat_rejected_revises_then_bundles():
+    # First rejection gets one revised single-video flat at our ROI ceiling; only
+    # a second rejection moves to a bundle.
     s = NegotiationState("c", "k", "t")
-    decide(CreatorMessage(Intent.INTERESTED), s, VM, ECON, CTX)
-    d = decide(CreatorMessage(Intent.REJECTING, raw_text="too low"), s, VM, ECON, CTX)
-    assert d.action == Action.ESCALATE_BUNDLE and d.deal.video_count > 1 and s.bundle_offered
+    d0 = decide(CreatorMessage(Intent.INTERESTED), s, VM, ECON, CTX)
+    d1 = decide(CreatorMessage(Intent.REJECTING, raw_text="too low"), s, VM, ECON, CTX)
+    assert d1.action == Action.OPENING_FLAT and d1.deal.video_count == 1
+    assert s.flat_revised and not s.bundle_offered
+    assert d1.deal.total_usd >= d0.deal.total_usd            # a real concession up
+    assert d1.deal.total_usd <= _max_pay_per_video(VM, ECON, CTX) + 50  # still ROI-capped
+    d2 = decide(CreatorMessage(Intent.REJECTING, raw_text="still too low"),
+                s, VM, ECON, CTX)
+    assert d2.action == Action.ESCALATE_BUNDLE and d2.deal.video_count > 1
+    assert s.bundle_offered
 
 
 def test_extreme_ask_escalates_to_human():

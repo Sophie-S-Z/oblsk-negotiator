@@ -1,0 +1,34 @@
+# Behavior tree branch order. The agent walks this top to bottom on every inbound
+# message and fires the handler of the first guard that holds. Guard and handler
+# names resolve against the GUARDS and HANDLERS registries in behavior_tree.py,
+# where all the pricing logic lives; this file controls only order and wiring.
+#
+# Adding a branch: insert a row at the right position with a guard and handler
+# that are registered in behavior_tree.py. The list must end in the `always`
+# guard so some branch always fires.
+#
+# Order matters. It mirrors how a person works a thread: stand down if a teammate
+# stepped in, lock a yes, answer questions, open with one number, then once a
+# number is on the table accept a fair ask, escalate an extreme one or a stalled
+# thread, and otherwise escalate to a bundle and then a sweetener.
+
+- guard: human_intervened          # a teammate sent the last message
+  handler: pause_human
+- guard: creator_accepted          # they said yes
+  handler: accept_on_confirm
+- guard: creator_asked             # they asked a question
+  handler: answer_question
+- guard: no_offer_yet              # no number on the table yet
+  handler: open_or_soft_close
+- guard: ask_acceptable            # their ask is at or below our max
+  handler: accept_ask
+- guard: ask_extreme               # their ask is wildly above what the numbers support
+  handler: escalate_human_extreme
+- guard: out_of_rounds             # negotiation rounds exhausted
+  handler: escalate_human
+- guard: no_revision_yet           # opening flat rejected; try one revised flat first
+  handler: revise_flat
+- guard: no_bundle_yet             # revised flat also rejected, no bundle offered yet
+  handler: escalate_bundle
+- guard: always                    # bundle on the table, they still want more
+  handler: sweeten_or_escalate

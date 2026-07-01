@@ -14,9 +14,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Optional
 import numpy as np
 
 from .behavior_tree import CreatorMessage, Intent, Decision, Action
+from .ev_engine import Bundle
+from .rate_card import RateCard
 
 
 class Personality(str, Enum):
@@ -37,12 +40,15 @@ class SimCreator:
     counter_ratio: float = 0.6
     bulk_tolerance: float = 0.0         # bulk discount per video they'll grant for volume
     max_videos: int = 4                 # most videos they'll commit to at once
+    rate_card: Optional[RateCard] = None  # their list prices, for judging a bundle
+    max_bundle_discount: float = 0.20    # most off list they'll take on a package
     rng_seed: int = 0
 
     def __post_init__(self):
         self._rng = np.random.default_rng(self.rng_seed)
         self._pending = list(self.questions)
         self._last_ask_pv = self.opening_ask if self.opening_ask else None
+        self._last_bundle_ask = None
         self._rounds = 0
 
     def first_message(self) -> CreatorMessage:
@@ -71,6 +77,8 @@ class SimCreator:
 
         if a in (Action.OPENING_FLAT, Action.ESCALATE_BUNDLE, Action.ADD_SWEETENER):
             d = decision.deal
+            if isinstance(d, Bundle):
+                return self._respond_to_bundle(d, a)
             offered_per_video = d.effective_per_video
             offered_videos = d.video_count
 
@@ -110,6 +118,37 @@ class SimCreator:
         if a == Action.ACCEPT:
             return CreatorMessage(intent=Intent.ACCEPTED, raw_text="Great, thanks.")
         return CreatorMessage(intent=Intent.UNCLEAR, raw_text="Okay, thanks.")
+
+    def _bundle_list_total(self, bundle: Bundle) -> float:
+        """What this creator's own rate card would charge for the bundle's formats
+        at full list (no discount). Falls back to a per-video proxy for any format
+        not on their card."""
+        total = 0.0
+        for line in bundle.lines:
+            price = self.rate_card.get(line.fmt) if self.rate_card else None
+            if price is None:
+                price = self.reservation_per_video
+            total += float(price) * line.quantity
+        return total
+
+    def _respond_to_bundle(self, bundle: Bundle, action: Action) -> CreatorMessage:
+        """Judge a multi-format package against list prices, not a per-video floor.
+        Accept when the total we pay is at least their list less the bundle discount
+        they will grant; otherwise counter toward their list total."""
+        paid = bundle.total_usd
+        list_total = self._bundle_list_total(bundle)
+        floor = list_total * (1.0 - self.max_bundle_discount)
+        perceived = paid * (1.04 if action == Action.ADD_SWEETENER else 1.0)
+        if perceived >= floor * self._rng.normal(1.0, 0.03):
+            return CreatorMessage(intent=Intent.ACCEPTED,
+                                  raw_text="That works for me, let's do it.")
+        anchor = self._last_bundle_ask if self._last_bundle_ask else list_total
+        new_total = max(anchor - self.counter_ratio * (anchor - paid), floor)
+        self._last_bundle_ask = new_total
+        return CreatorMessage(
+            intent=Intent.NEGOTIATING, ask_total_usd=round(new_total, -1),
+            ask_video_count=bundle.video_count,
+            raw_text=f"Could you get closer to ${new_total:,.0f} for the package?")
 
 
 PERSONAS = {

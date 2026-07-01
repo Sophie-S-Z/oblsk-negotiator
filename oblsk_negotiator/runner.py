@@ -15,12 +15,16 @@ from typing import Optional, Callable
 import time
 import numpy as np
 
-from .ev_engine import CreatorEconomics, ViewModel, ev_distribution, Deal
+from .ev_engine import (CreatorEconomics, ViewModel, ev_distribution, ev_bundle,
+                        Deal, Bundle, FormatCatalog, deal_from_dict)
 from .state import NegotiationState, Status, AutonomyLevel
 from .behavior_tree import decide, Intent, CampaignContext, Decision, Action
 from .creator_sim import SimCreator
 from .prose import render_template
 from .qa import CampaignBrief
+from .rate_card import RateCard
+from .events import (EventLog, MESSAGE_RECEIVED, DECISION, APPROVAL, SENT,
+                     HUMAN_REJECTED)
 
 
 @dataclass
@@ -71,6 +75,7 @@ class NegotiationOutcome:
     final_ev_net_mean: Optional[float]
     final_ev_roi: Optional[float]
     transcript: list[TurnLog] = field(default_factory=list)
+    event_log: Optional[EventLog] = None
 
     @property
     def discount_from_ask(self) -> Optional[float]:
@@ -92,6 +97,8 @@ def run_negotiation(vm: ViewModel,
                     creator: SimCreator,
                     *,
                     brief: Optional[CampaignBrief] = None,
+                    catalog: Optional[FormatCatalog] = None,
+                    rate_card: Optional[RateCard] = None,
                     autonomy: AutonomyLevel = AutonomyLevel.HUMAN_APPROVAL,
                     approver: Approver = always_approve,
                     creator_id="c1", campaign_id="camp1", thread_id="t1",
@@ -105,17 +112,24 @@ def run_negotiation(vm: ViewModel,
     transcript: list[TurnLog] = []
     approvals_requested = 0
     human_rejected = False
+    log = EventLog()
 
     msg = creator.first_message()
     transcript.append(TurnLog("creator", msg.intent.value, msg.ask_total_usd, msg.raw_text))
+    log.append(MESSAGE_RECEIVED, intent=msg.intent.value, ask_total=msg.ask_total_usd)
     if verbose:
         print(f"CREATOR: {msg.raw_text}")
 
     for _ in range(max_turns):
         decision = decide(msg, state, vm, econ, ctx, brief=brief,
+                          catalog=catalog, rate_card=rate_card,
                           thread_last_sender="creator", thread_last_ts=time.time())
         state.last_agent_message_at = time.time()
         total = _deal_total(decision.deal)
+        log.append(DECISION, action=decision.action.value, total=total,
+                   video_count=(decision.deal.video_count if decision.deal else None),
+                   requires_approval=decision.requires_approval,
+                   qa_count=state.questions_answered)
 
         approved = True
         if decision.requires_approval:
@@ -130,12 +144,16 @@ def run_negotiation(vm: ViewModel,
                 state.status = Status.ESCALATED
                 state.escalation_reason = "human rejected the proposed message"
                 transcript.append(TurnLog("human", "rejected", total, result.note))
+                log.append(HUMAN_REJECTED, action=decision.action.value, total=total)
                 break
+            log.append(APPROVAL, action=decision.action.value, outcome="approved")
         else:
             state.record_approval(decision.action.value, total, "auto", "autonomous send")
+            log.append(APPROVAL, action=decision.action.value, outcome="auto")
 
         email = render_template(decision, creator_name=creator_name, seed=state.round_count)
         transcript.append(TurnLog("agent", decision.action.value, total, email))
+        log.append(SENT, action=decision.action.value, total=total)
         if verbose:
             who = "AGENT (approved, sent)" if decision.requires_approval else "AGENT (sent)"
             print(f"\n{who} [{decision.action.value}]:\n{email}")
@@ -147,12 +165,18 @@ def run_negotiation(vm: ViewModel,
 
         msg = creator.respond_to(decision)
         transcript.append(TurnLog("creator", msg.intent.value, msg.ask_total_usd, msg.raw_text))
+        log.append(MESSAGE_RECEIVED, intent=msg.intent.value, ask_total=msg.ask_total_usd)
         if verbose:
             print(f"CREATOR: {msg.raw_text}")
 
         if msg.intent == Intent.ACCEPTED:
-            decision = decide(msg, state, vm, econ, ctx, brief=brief)
+            decision = decide(msg, state, vm, econ, ctx, brief=brief,
+                              catalog=catalog, rate_card=rate_card)
             total = _deal_total(decision.deal)
+            log.append(DECISION, action=decision.action.value, total=total,
+                       video_count=(decision.deal.video_count if decision.deal else None),
+                       requires_approval=decision.requires_approval,
+                       qa_count=state.questions_answered)
             if decision.requires_approval:
                 approvals_requested += 1
                 result = approver(decision, state)
@@ -162,9 +186,12 @@ def run_negotiation(vm: ViewModel,
                 if result.outcome != "approved":
                     human_rejected = True
                     state.status = Status.ESCALATED
+                    log.append(HUMAN_REJECTED, action=decision.action.value, total=total)
                     break
+                log.append(APPROVAL, action=decision.action.value, outcome="approved")
             transcript.append(TurnLog("agent", decision.action.value, total,
                                       render_template(decision, creator_name)))
+            log.append(SENT, action=decision.action.value, total=total)
             if verbose:
                 print(f"\nAGENT [{decision.action.value}]: locking terms.")
             break
@@ -178,10 +205,13 @@ def run_negotiation(vm: ViewModel,
 
     final_net = final_roi = final_vc = None
     if final_deal:
-        d = Deal(**final_deal)
+        d = deal_from_dict(final_deal)
         final_vc = d.video_count
         if state.status == Status.ACCEPTED:
-            ev = ev_distribution(vm, d, econ, n_samples=8000, seed=99)
+            if isinstance(d, Bundle) and catalog is not None:
+                ev = ev_bundle(catalog, d, n_samples=8000, seed=99)
+            else:
+                ev = ev_distribution(vm, d, econ, n_samples=8000, seed=99)
             final_net, final_roi = ev.net_mean, ev.roi_mean
 
     runs_autonomously = (state.status == Status.ACCEPTED and
@@ -197,7 +227,8 @@ def run_negotiation(vm: ViewModel,
         approvals_requested=approvals_requested, human_rejected=human_rejected,
         runs_autonomously=runs_autonomously,
         escalated=(state.status == Status.ESCALATED),
-        final_ev_net_mean=final_net, final_ev_roi=final_roi, transcript=transcript)
+        final_ev_net_mean=final_net, final_ev_roi=final_roi, transcript=transcript,
+        event_log=log)
 
 
 @dataclass

@@ -72,6 +72,7 @@ class NegotiationState:
     max_rounds: int = 3
     questions_answered: int = 0
     flat_offer_made: bool = False
+    flat_revised: bool = False
     bundle_offered: bool = False
 
     concession_history: list[ConcessionRecord] = field(default_factory=list)
@@ -115,11 +116,13 @@ class NegotiationState:
         return False
 
     def record_concession(self, deal_dict: dict, total: float,
-                          creator_ask: Optional[float]):
+                          creator_ask: Optional[float],
+                          video_count: Optional[int] = None):
+        vc = video_count if video_count is not None \
+            else deal_dict.get("video_count", 1)
         self.concession_history.append(ConcessionRecord(
             round=self.round_count, offered_total=total,
-            offered_video_count=deal_dict.get("video_count", 1),
-            asked_for=creator_ask, deal=deal_dict))
+            offered_video_count=vc, asked_for=creator_ask, deal=deal_dict))
 
     def record_approval(self, action: str, proposed_total: Optional[float],
                         outcome: str, note: str = ""):
