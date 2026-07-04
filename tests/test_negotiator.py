@@ -184,6 +184,30 @@ def test_accept_never_crosses_walk_away():
     assert ok.action == Action.ACCEPT
 
 
+def test_accept_rationale_ceiling_is_consistent():
+    # Regression: the accept rationale used to display raw willingness (the
+    # target) as "our max", so an ask between target and target*margin was
+    # accepted while the text claimed it was "at or below" a smaller number.
+    # The stated ceiling must never be below the per-video rate accepted.
+    import re
+    from oblsk_negotiator.behavior_tree import _ladder
+    # A low-variance creator makes target strictly below walk-away, the case
+    # that exposed the gap.
+    vm = fit_view_model(np.random.default_rng(3).lognormal(np.log(50000), 0.25, 40))
+    lad = _ladder(vm, ECON, CTX)
+    assert not lad.downside_limited            # target < walk-away here
+    s = NegotiationState("c", "k", "t")
+    decide(CreatorMessage(Intent.INTERESTED), s, vm, ECON, CTX)
+    ask = round(lad.target * 1.03)             # above target, under the gate
+    d = decide(CreatorMessage(Intent.NEGOTIATING, ask_total_usd=ask), s, vm, ECON, CTX)
+    assert d.action == Action.ACCEPT
+    dollars = [float(x.replace(",", "")) for x in re.findall(r"\$([\d,]+)", d.rationale)]
+    per_video = d.deal.total_usd / d.deal.video_count
+    ceiling = max(dollars)                      # the stated ceiling is the largest figure
+    assert ceiling >= per_video - 1             # never accept above the stated ceiling
+    assert ceiling <= lad.walk_away + 1         # and the ceiling itself respects walk-away
+
+
 def test_ladder_orders_and_reproduces():
     lad = price_ladder(VM, ECON, CTX.pricing_policy())
     assert 0 < lad.anchor <= lad.target <= lad.walk_away

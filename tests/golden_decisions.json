@@ -855,7 +855,7 @@
       "roi_mean": 5.1851
      },
      "non_price_lever": null,
-     "rationale": "Accept $1,500 across 1 video(s). At or below our max ($2,405/video), ROI 5.2x.",
+     "rationale": "Accept $1,500 across 1 video(s) ($1,500/video) \u2014 within our $2,526/video ceiling, ROI 5.2x.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
@@ -2177,7 +2177,7 @@
       "roi_mean": 4.3209
      },
      "non_price_lever": null,
-     "rationale": "Accept $1,800 across 1 video(s). At or below our max ($2,405/video), ROI 4.3x.",
+     "rationale": "Accept $1,800 across 1 video(s) ($1,800/video) \u2014 within our $2,526/video ceiling, ROI 4.3x.",
      "requires_approval": false,
      "reserve_deal": null,
      "reserve_ev": null
@@ -3594,7 +3594,7 @@
       "roi_mean": 3.2407
      },
      "non_price_lever": null,
-     "rationale": "Accept $2,400 across 1 video(s). At or below our max ($2,958/video), ROI 3.2x.",
+     "rationale": "Accept $2,400 across 1 video(s) ($2,400/video) \u2014 within our $2,958/video ceiling, ROI 3.2x.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
@@ -5309,7 +5309,7 @@
       "roi_mean": 8.5923
      },
      "non_price_lever": null,
-     "rationale": "Accept $1,800 across 2 video(s). At or below our max ($2,405/video), ROI 8.6x.",
+     "rationale": "Accept $1,800 across 2 video(s) ($900/video) \u2014 within our $2,526/video ceiling, ROI 8.6x.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
@@ -5389,7 +5389,7 @@
       "roi_mean": 6.4442
      },
      "non_price_lever": null,
-     "rationale": "Accept $2,400 across 2 video(s). At or below our max ($2,405/video), ROI 6.4x.",
+     "rationale": "Accept $2,400 across 2 video(s) ($1,200/video) \u2014 within our $2,526/video ceiling, ROI 6.4x.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
@@ -5990,7 +5990,7 @@
       "roi_mean": 4.3209
      },
      "non_price_lever": null,
-     "rationale": "Accept $1,800 across 1 video(s). At or below our max ($2,405/video), ROI 4.3x.",
+     "rationale": "Accept $1,800 across 1 video(s) ($1,800/video) \u2014 within our $2,526/video ceiling, ROI 4.3x.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
@@ -6095,7 +6095,7 @@
       "roi_mean": 7.2339
      },
      "non_price_lever": null,
-     "rationale": "Accept $3,200 across 3 video(s). At or below our max ($2,405/video), ROI 7.2x.",
+     "rationale": "Accept $3,200 across 3 video(s) ($1,067/video) \u2014 within our $2,526/video ceiling, ROI 7.2x.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
@@ -6855,7 +6855,7 @@
       "roi_mean": 3.2407
      },
      "non_price_lever": null,
-     "rationale": "Accept $2,400 across 1 video(s). At or below our max ($2,958/video), ROI 3.2x.",
+     "rationale": "Accept $2,400 across 1 video(s) ($2,400/video) \u2014 within our $2,958/video ceiling, ROI 3.2x.",
      "requires_approval": false,
      "reserve_deal": null,
      "reserve_ev": null
@@ -7265,7 +7265,7 @@
       "roi_mean": 4.6297
      },
      "non_price_lever": null,
-     "rationale": "Accept $5,000 across 3 video(s). At or below our max ($2,405/video), ROI 4.6x.",
+     "rationale": "Accept $5,000 across 3 video(s) ($1,667/video) \u2014 within our $2,526/video ceiling, ROI 4.6x.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
@@ -8088,7 +8088,7 @@
       "roi_mean": 6.4814
      },
      "non_price_lever": null,
-     "rationale": "Accept $1,200 across 1 video(s). At or below our max ($2,405/video), ROI 6.5x.",
+     "rationale": "Accept $1,200 across 1 video(s) ($1,200/video) \u2014 within our $2,526/video ceiling, ROI 6.5x.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
@@ -8684,7 +8684,7 @@
       "roi_mean": 6.4442
      },
      "non_price_lever": null,
-     "rationale": "Accept $2,400 across 2 video(s). At or below our max ($2,405/video), ROI 6.4x.",
+     "rationale": "Accept $2,400 across 2 video(s) ($1,200/video) \u2014 within our $2,526/video ceiling, ROI 6.4x.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
@@ -9114,7 +9114,7 @@
       "roi_mean": 12.8884
      },
      "non_price_lever": null,
-     "rationale": "Accept $1,200 across 2 video(s). At or below our max ($2,405/video), ROI 12.9x.",
+     "rationale": "Accept $1,200 across 2 video(s) ($600/video) \u2014 within our $2,526/video ceiling, ROI 12.9x.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
@@ -9675,7 +9675,7 @@
       "roi_mean": 8.5923
      },
      "non_price_lever": null,
-     "rationale": "Accept $1,800 across 2 video(s). At or below our max ($2,958/video), ROI 8.6x.",
+     "rationale": "Accept $1,800 across 2 video(s) ($900/video) \u2014 within our $2,958/video ceiling, ROI 8.6x.",
      "requires_approval": false,
      "reserve_deal": null,
      "reserve_ev": null
@@ -10380,7 +10380,7 @@
       "roi_mean": 6.4814
      },
      "non_price_lever": null,
-     "rationale": "Accept $1,200 across 1 video(s). At or below our max ($2,405/video), ROI 6.5x.",
+     "rationale": "Accept $1,200 across 1 video(s) ($1,200/video) \u2014 within our $2,526/video ceiling, ROI 6.5x.",
      "requires_approval": false,
      "reserve_deal": null,
      "reserve_ev": null
@@ -11183,7 +11183,7 @@
       "roi_mean": 4.8332
      },
      "non_price_lever": null,
-     "rationale": "Accept $3,200 across 2 video(s). At or below our max ($2,958/video), ROI 4.8x.",
+     "rationale": "Accept $3,200 across 2 video(s) ($1,600/video) \u2014 within our $2,958/video ceiling, ROI 4.8x.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
@@ -11429,7 +11429,7 @@
       "roi_mean": 3.2407
      },
      "non_price_lever": null,
-     "rationale": "Accept $2,400 across 1 video(s). At or below our max ($2,405/video), ROI 3.2x.",
+     "rationale": "Accept $2,400 across 1 video(s) ($2,400/video) \u2014 within our $2,526/video ceiling, ROI 3.2x.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
@@ -11686,7 +11686,7 @@
       "roi_mean": 4.3209
      },
      "non_price_lever": null,
-     "rationale": "Accept $1,800 across 1 video(s). At or below our max ($2,405/video), ROI 4.3x.",
+     "rationale": "Accept $1,800 across 1 video(s) ($1,800/video) \u2014 within our $2,526/video ceiling, ROI 4.3x.",
      "requires_approval": false,
      "reserve_deal": null,
      "reserve_ev": null
@@ -12073,7 +12073,7 @@
       "roi_mean": 3.2407
      },
      "non_price_lever": null,
-     "rationale": "Accept $2,400 across 1 video(s). At or below our max ($2,405/video), ROI 3.2x.",
+     "rationale": "Accept $2,400 across 1 video(s) ($2,400/video) \u2014 within our $2,526/video ceiling, ROI 3.2x.",
      "requires_approval": false,
      "reserve_deal": null,
      "reserve_ev": null
@@ -13424,7 +13424,7 @@
       "roi_mean": 4.3209
      },
      "non_price_lever": null,
-     "rationale": "Accept $1,800 across 1 video(s). At or below our max ($2,958/video), ROI 4.3x.",
+     "rationale": "Accept $1,800 across 1 video(s) ($1,800/video) \u2014 within our $2,958/video ceiling, ROI 4.3x.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
@@ -13648,7 +13648,7 @@
       "roi_mean": 12.8603
      },
      "non_price_lever": null,
-     "rationale": "Accept $1,800 across 3 video(s). At or below our max ($2,405/video), ROI 12.9x.",
+     "rationale": "Accept $1,800 across 3 video(s) ($600/video) \u2014 within our $2,526/video ceiling, ROI 12.9x.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
@@ -13983,7 +13983,7 @@
       "roi_mean": 7.2339
      },
      "non_price_lever": null,
-     "rationale": "Accept $3,200 across 3 video(s). At or below our max ($2,405/video), ROI 7.2x.",
+     "rationale": "Accept $3,200 across 3 video(s) ($1,067/video) \u2014 within our $2,526/video ceiling, ROI 7.2x.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
@@ -14310,7 +14310,7 @@
       "roi_mean": 12.8884
      },
      "non_price_lever": null,
-     "rationale": "Accept $1,200 across 2 video(s). At or below our max ($2,958/video), ROI 12.9x.",
+     "rationale": "Accept $1,200 across 2 video(s) ($600/video) \u2014 within our $2,958/video ceiling, ROI 12.9x.",
      "requires_approval": false,
      "reserve_deal": null,
      "reserve_ev": null
@@ -14623,7 +14623,7 @@
       "roi_mean": 12.8884
      },
      "non_price_lever": null,
-     "rationale": "Accept $1,200 across 2 video(s). At or below our max ($2,958/video), ROI 12.9x.",
+     "rationale": "Accept $1,200 across 2 video(s) ($600/video) \u2014 within our $2,958/video ceiling, ROI 12.9x.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
@@ -17884,7 +17884,7 @@
       "roi_mean": 7.2339
      },
      "non_price_lever": null,
-     "rationale": "Accept $3,200 across 3 video(s). At or below our max ($2,958/video), ROI 7.2x.",
+     "rationale": "Accept $3,200 across 3 video(s) ($1,067/video) \u2014 within our $2,958/video ceiling, ROI 7.2x.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
@@ -19237,7 +19237,7 @@
       "roi_mean": 4.6297
      },
      "non_price_lever": null,
-     "rationale": "Accept $5,000 across 3 video(s). At or below our max ($2,958/video), ROI 4.6x.",
+     "rationale": "Accept $5,000 across 3 video(s) ($1,667/video) \u2014 within our $2,958/video ceiling, ROI 4.6x.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
@@ -19778,7 +19778,7 @@
       "roi_mean": 12.8884
      },
      "non_price_lever": null,
-     "rationale": "Accept $1,200 across 2 video(s). At or below our max ($2,405/video), ROI 12.9x.",
+     "rationale": "Accept $1,200 across 2 video(s) ($600/video) \u2014 within our $2,526/video ceiling, ROI 12.9x.",
      "requires_approval": false,
      "reserve_deal": null,
      "reserve_ev": null
@@ -19825,7 +19825,7 @@
       "roi_mean": 3.0932
      },
      "non_price_lever": null,
-     "rationale": "Accept $5,000 across 2 video(s). At or below our max ($2,405/video), ROI 3.1x.",
+     "rationale": "Accept $5,000 across 2 video(s) ($2,500/video) \u2014 within our $2,526/video ceiling, ROI 3.1x.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
@@ -20260,7 +20260,7 @@
       "roi_mean": 3.2407
      },
      "non_price_lever": null,
-     "rationale": "Accept $2,400 across 1 video(s). At or below our max ($2,405/video), ROI 3.2x.",
+     "rationale": "Accept $2,400 across 1 video(s) ($2,400/video) \u2014 within our $2,526/video ceiling, ROI 3.2x.",
      "requires_approval": false,
      "reserve_deal": null,
      "reserve_ev": null
@@ -20698,7 +20698,7 @@
       "roi_mean": 9.6452
      },
      "non_price_lever": null,
-     "rationale": "Accept $2,400 across 3 video(s). At or below our max ($2,405/video), ROI 9.6x.",
+     "rationale": "Accept $2,400 across 3 video(s) ($800/video) \u2014 within our $2,526/video ceiling, ROI 9.6x.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
@@ -20778,7 +20778,7 @@
       "roi_mean": 4.3209
      },
      "non_price_lever": null,
-     "rationale": "Accept $1,800 across 1 video(s). At or below our max ($2,405/video), ROI 4.3x.",
+     "rationale": "Accept $1,800 across 1 video(s) ($1,800/video) \u2014 within our $2,526/video ceiling, ROI 4.3x.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
@@ -21110,7 +21110,7 @@
       "roi_mean": 3.0932
      },
      "non_price_lever": null,
-     "rationale": "Accept $5,000 across 2 video(s). At or below our max ($2,405/video), ROI 3.1x.",
+     "rationale": "Accept $5,000 across 2 video(s) ($2,500/video) \u2014 within our $2,526/video ceiling, ROI 3.1x.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
@@ -22825,7 +22825,7 @@
       "roi_mean": 7.2339
      },
      "non_price_lever": null,
-     "rationale": "Accept $3,200 across 3 video(s). At or below our max ($11,078/video), ROI 7.2x.",
+     "rationale": "Accept $3,200 across 3 video(s) ($1,067/video) \u2014 within our $11,632/video ceiling, ROI 7.2x.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
@@ -24129,7 +24129,7 @@
       "roi_mean": 4.3209
      },
      "non_price_lever": null,
-     "rationale": "Accept $1,800 across 1 video(s). At or below our max ($2,958/video), ROI 4.3x.",
+     "rationale": "Accept $1,800 across 1 video(s) ($1,800/video) \u2014 within our $2,958/video ceiling, ROI 4.3x.",
      "requires_approval": false,
      "reserve_deal": null,
      "reserve_ev": null

@@ -410,12 +410,16 @@ def _add_sweetener_or_escalate(state, vm, econ, ctx, ask, *,
                                              state, ctx))
 
 
-def _accept_ask(msg, state, vm, econ, ctx, willingness) -> Decision:
+def _accept_ask(msg, state, vm, econ, ctx, accept_ceiling_pv) -> Decision:
+    """Accept the creator's ask. `accept_ceiling_pv` is the exact per-video gate
+    the tree measured the ask against (willingness plus the thin-gap margin,
+    capped at the walk-away) — display that, not a looser number, so the
+    rationale never reads as accepting above its own stated ceiling."""
     ask = msg.ask_total_usd
-    videos = msg.ask_video_count or (
+    videos = max(msg.ask_video_count or (
         state.concession_history[-1].offered_video_count
-        if state.concession_history else 1)
-    deal = flat_offer(ask, video_count=max(videos, 1))
+        if state.concession_history else 1), 1)
+    deal = flat_offer(ask, video_count=videos)
     ev = _score(deal, vm, econ, seed=5)
 
     state.status = Status.ACCEPTED
@@ -425,10 +429,12 @@ def _accept_ask(msg, state, vm, econ, ctx, willingness) -> Decision:
                             video_count=deal.video_count)
     state.final_total = deal.total_usd
     state.final_deal = deal_to_dict(deal)
+    per_video = deal.total_usd / deal.video_count
     return Decision(
         action=Action.ACCEPT, deal=deal, ev=ev,
-        rationale=f"Accept ${ask:,.0f} across {deal.video_count} video(s). At or "
-                  f"below our max (${willingness:,.0f}/video), ROI {ev.roi_mean:.1f}x.",
+        rationale=f"Accept ${ask:,.0f} across {deal.video_count} video(s) "
+                  f"(${per_video:,.0f}/video) — within our ${accept_ceiling_pv:,.0f}"
+                  f"/video ceiling, ROI {ev.roi_mean:.1f}x.",
         requires_approval=_requires_approval(Action.ACCEPT, deal.total_usd,
                                              state, ctx))
 
@@ -763,7 +769,7 @@ HANDLERS = {
     "hold_position": _hold_position,
     "revise_flat": _revise_flat,
     "accept_ask": lambda d: _accept_ask(
-        d.msg, d.state, d.vm, d.econ, d.ctx, d.willingness),
+        d.msg, d.state, d.vm, d.econ, d.ctx, _accept_threshold_per_video(d)),
     "escalate_human_extreme": lambda d: _escalate_human(
         d.state, d.vm, d.econ, d.ctx, d.ask, extreme=True, catalog=d.catalog),
     "escalate_human_contract": lambda d: _escalate_human(
