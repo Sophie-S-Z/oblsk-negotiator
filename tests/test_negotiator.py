@@ -15,14 +15,37 @@ from oblsk_negotiator.behavior_tree import (decide, CreatorMessage, Intent,
                                            _requires_approval, _round_money,
                                            _flat_total, _bundle_total,
                                            _max_pay_per_video)
+from oblsk_negotiator.pricing import price_ladder, authenticity
 from oblsk_negotiator.qa import (CampaignBrief, classify_question_topic,
                                 answer_from_brief, signals_ready_for_offer)
-from oblsk_negotiator.creator_sim import PERSONAS
+from oblsk_negotiator.creator_sim import SimCreator
 from oblsk_negotiator.prose import render_template
 from oblsk_negotiator.runner import run_negotiation, reject_action
 
 ECON = CreatorEconomics(conversion_rate=0.0016, ltv_usd=80)
 CTX = CampaignContext()
+
+
+def _sim(floor=2450, opens="interest", ask=0.0, counter=0.6, bulk=0.06,
+         max_videos=4, questions=None, walks=False, seed=0):
+    return SimCreator(
+        reservation_per_video=floor, opening_ask=ask, opens_with=opens,
+        questions=questions or [], counter_ratio=counter, bulk_tolerance=bulk,
+        max_videos=max_videos, walks_if_lowballed=walks, rng_seed=seed)
+
+
+# A spread of temperaments for end-to-end runs: floor, how they open, how hard
+# they counter, whether volume moves them, whether they walk when lowballed.
+SIM_CONFIGS = [
+    dict(floor=2450, opens="question", counter=0.6, bulk=0.06,
+         questions=["What would the deliverables be for this?",
+                    "And what's the timeline looking like?"]),
+    dict(floor=2450, counter=0.35, bulk=0.0, max_videos=3),
+    dict(floor=2450, counter=0.6, bulk=0.10, max_videos=5),
+    dict(floor=2700, opens="ask", ask=3500, counter=0.45, bulk=0.0,
+         max_videos=3, walks=True),
+    dict(floor=1700, counter=0.7, bulk=0.08, max_videos=5),
+]
 
 
 def _views(median, sigma, n, hits=None, seed=0):
@@ -126,13 +149,62 @@ def test_flat_rejected_revises_then_bundles():
 
 
 def test_extreme_ask_escalates_to_human():
-    # An ask far above what the numbers support goes straight to a person.
+    # An ask far above the walk-away ceiling goes straight to a person.
     s = NegotiationState("c", "k", "t")
     decide(CreatorMessage(Intent.INTERESTED), s, VM, ECON, CTX)        # flat
-    willing = _flat_total(VM, ECON, CTX)
-    d = decide(CreatorMessage(Intent.NEGOTIATING, ask_total_usd=willing * 3),
+    ceiling = _max_pay_per_video(VM, ECON, CTX)
+    d = decide(CreatorMessage(Intent.NEGOTIATING, ask_total_usd=ceiling * 3),
                s, VM, ECON, CTX)
     assert d.action == Action.ESCALATE_HUMAN and "x what" in d.rationale
+
+
+def test_ladder_orders_and_reproduces():
+    lad = price_ladder(VM, ECON, CTX.pricing_policy())
+    assert 0 < lad.anchor <= lad.target <= lad.walk_away
+    assert lad.value_down <= lad.value_exp <= lad.value_up
+    again = price_ladder(VM, ECON, CTX.pricing_policy())
+    assert again.target == lad.target and again.walk_away == lad.walk_away
+
+
+def test_ladder_cpm_cap_binds():
+    from oblsk_negotiator.pricing import PricingPolicy
+    tight = PricingPolicy(cpm_cap_usd=1.0)   # $1 per 1,000 views: far below ROI room
+    lad = price_ladder(VM, ECON, tight)
+    assert lad.binding == "CPM-cap"
+    assert lad.walk_away < price_ladder(VM, ECON, PricingPolicy()).walk_away
+
+
+def test_risk_discount_tightens_ceiling():
+    from oblsk_negotiator.pricing import PricingPolicy
+    base = price_ladder(VM, ECON, PricingPolicy())
+    risky = price_ladder(VM, ECON, PricingPolicy(risk_discount=0.5))
+    assert risky.walk_away < base.walk_away
+
+
+def test_authenticity_flags_inflated_account():
+    good = authenticity([{"views": 50000, "likes": 4000, "comments": 90}] * 10,
+                        followers=100000)
+    bad = authenticity([{"views": 1500, "likes": 300, "comments": 0}] * 10,
+                       followers=900000)
+    assert good["score"] > bad["score"]
+    assert bad["score"] < 0.8
+
+
+def test_recency_weighted_fit_tracks_recent_posts():
+    # Old posts at 20k views, recent posts at 80k: the weighted fit should sit
+    # far closer to the recent level than the unweighted one.
+    now = 1_750_000_000
+    views = [20000] * 12 + [80000] * 12
+    ts = [now - 400 * 86400] * 12 + [now - 5 * 86400] * 12
+    flat = fit_view_model(views)
+    weighted = fit_view_model(views, timestamps=ts)
+    assert weighted.median_views > flat.median_views * 1.3
+
+
+def test_sponsored_haircut_scales_model():
+    full = fit_view_model(_views(50000, 0.6, 24, seed=3))
+    cut = fit_view_model(_views(50000, 0.6, 24, seed=3), sponsored_factor=0.8)
+    assert abs(cut.median_views - 0.8 * full.median_views) < 1e-6
 
 
 def test_prose_leads_with_one_offer():
@@ -155,29 +227,31 @@ def test_autonomous_small_deal_no_approval():
 
 
 def test_human_rejection_escalates():
-    o = run_negotiation(VM, ECON, CTX, PERSONAS["volume_friendly"](seed=1),
+    o = run_negotiation(VM, ECON, CTX, _sim(bulk=0.10, max_videos=5, seed=1),
                         approver=reject_action(Action.OPENING_FLAT))
     assert o.human_rejected and o.status == "escalated"
 
 
 def test_round_cap_escalates_human():
-    o = run_negotiation(VM, ECON, CTX, PERSONAS["aggressive"](seed=4))
+    o = run_negotiation(VM, ECON, CTX,
+                        _sim(**SIM_CONFIGS[3], seed=4))
     assert o.status in ("accepted", "escalated")
 
 
-def test_e2e_personas_close_or_escalate():
-    for p in PERSONAS:
+def test_e2e_creators_close_or_escalate():
+    for cfg in SIM_CONFIGS:
         for seed in range(8):
             o = run_negotiation(
                 fit_view_model(_views(50000, 0.6, 22, [300000, 650000], seed=seed)),
-                ECON, CTX, PERSONAS[p](seed=seed))
+                ECON, CTX, _sim(**cfg, seed=seed))
             assert o.status in ("accepted", "escalated", "rejected")
             if o.discount_from_ask is not None:
                 assert o.discount_from_ask >= -0.01
 
 
 def test_autonomous_closes_without_approvals():
-    o = run_negotiation(VM, ECON, CTX, PERSONAS["easygoing"](seed=1),
+    o = run_negotiation(VM, ECON, CTX, _sim(floor=1700, counter=0.7, bulk=0.08,
+                                            max_videos=5, seed=1),
                         autonomy=AutonomyLevel.AUTONOMOUS)
     assert o.status == "accepted" and o.approvals_requested == 0
 

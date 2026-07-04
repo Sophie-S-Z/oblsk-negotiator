@@ -74,6 +74,7 @@ class NegotiationState:
     flat_offer_made: bool = False
     flat_revised: bool = False
     bundle_offered: bool = False
+    call_proposed: bool = False
 
     concession_history: list[ConcessionRecord] = field(default_factory=list)
     approval_history: list[ApprovalRecord] = field(default_factory=list)
@@ -87,7 +88,7 @@ class NegotiationState:
     final_deal: Optional[dict] = None
     escalation_reason: Optional[str] = None
 
-    creator_first_ask: Optional[float] = None
+    creator_first_ask: Optional[float] = None   # per-video, normalized at capture
     notes: list[str] = field(default_factory=list)
 
     def to_json(self) -> str:

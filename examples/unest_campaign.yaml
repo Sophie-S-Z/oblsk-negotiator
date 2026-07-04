@@ -1,0 +1,81 @@
+# UNest creator campaign — built from the Creator Program Agreement and the
+# Influencer Content Guide. Load with:
+#     py demo.py --campaign examples/unest_campaign.yaml --replay <thread.txt>
+#
+# Everything the agent says comes from `brief`; everything it pays comes from
+# `economics` + `negotiation`. Tune per campaign, never in code.
+
+name: UNest creator program
+
+brief:
+  brand: UNest
+  product: >-
+    UNest, an investment account for kids — a straightforward way for parents
+    to build a financial foundation for their children's future (college, a
+    first home, or just a better starting line), starting from $25/month
+  platform: TikTok and Instagram
+  content_type: short-form video, cross-posted
+  deliverables: >-
+    three original short-form videos in your usual style, each cross-posted to
+    TikTok and Instagram Reels (six live posts total), with a comment-triggered
+    DM so viewers get your UNest link
+  timeline: >-
+    concepts within about a week of locking the brief; we consolidate feedback
+    within three business days at each step; posts are spaced out over an
+    agreed posting window
+  usage_rights: >-
+    180 days of organic usage and 90 days of paid usage (TikTok Spark Ads and
+    Meta partnership ads) from first ad launch; anything longer we agree on
+    separately, and posts stay live for 90 days
+  exclusivity: >-
+    only within the category — no sponsored content for direct competitors in
+    kids' savings/investing accounts from shortly before your first post to
+    shortly after your last; everything else is fair game
+  revisions: up to two consolidated rounds of revisions before publication
+  payment_terms: >-
+    the cash portion pays within five business days of each approved video
+    going live with its links and permissions; compensation can also include
+    UNest equity alongside cash if that is interesting to you
+  creative_freedom: >-
+    it is your voice and your story — we share a short guide (it is an
+    investment account, not a savings account; never guarantee returns; from
+    $25/month) and let you run with it
+  extra_facts:
+    equity: >-
+      UNest can structure part of the compensation as equity in the company,
+      documented separately, with a cash fallback if the equity paperwork
+      does not complete in time.
+    rewards: >-
+      UNest Rewards lets families invest cash back from 100+ partner brands
+      (Disney+, Nike) directly into their child's account.
+
+economics:
+  # Revenue-side assumptions per view — CALIBRATE against closed deals and
+  # attribution data before trusting absolute dollars. These placeholders make
+  # a ~150k-median-view family creator price near the $2,000/cross-post the
+  # team's calculator produced for this campaign.
+  conversion_rate: 0.0005     # fraction of views that become UNest signups
+  ltv_usd: 80                 # value of one signup
+
+negotiation:
+  # Ladder: open at anchor, aim at target, never cross walk-away.
+  roi_target: 3.0             # aim: 3x expected revenue per dollar of fee
+  roi_min: 1.0                # p10 downside must still break even
+  anchor_factor: 0.75         # open close to target: our first number is a
+                              # calculated one, presented as such
+  min_offer_usd: 500
+  # Stance.
+  auto_send_dollar_ceiling: 3000   # bigger totals always get a human sign-off
+  accept_margin: 1.05
+  extreme_ask_multiple: 2.0
+  target_videos: 3            # matches the 3-deliverable program agreement
+  bundle_bulk_discount: 0.10
+  high_value_threshold_usd: 5000
+  # When our team can take intro calls; the agent proposes these, a human
+  # sends the invite and runs the call.
+  call_windows: "Thursday afternoon after 3:00 PM ET, or Friday after 11:00 AM ET"
+
+us_aliases:                   # how replay recognizes our side of an email thread
+  - unest.co
+  - Eyal Cohen
+  - publishers@unest.co

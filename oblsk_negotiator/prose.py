@@ -2,21 +2,26 @@
 The words the creator sees. Turns a Decision into one short, human message.
 
 The tree decides the move and the numbers; this layer only renders them. It
-leads with one offer, never a menu, and never changes a number. render_template
-is the no-network version used in the demo and as a fallback. build_llm_prompt is
-the prompt for the production model, which writes the same decision in the same
-voice.
+leads with one offer, never a menu, and never changes a number.
+
+write_message is the entry point: it has the LLM draft the message from the
+decision (build_llm_prompt) and falls back to render_template — the
+deterministic, no-network version — when no LLM is configured or the draft
+drops a required number.
 """
 
 from __future__ import annotations
 
 import random
+from . import llm
 from .behavior_tree import Decision, Action
 from .ev_engine import Deal, Bundle
 from .rate_card import FORMAT_LABELS
 
 
-_GREETINGS = ["Hey {name},", "Hi {name},", "{name},", "Hey {name}!"]
+_GREETINGS = ["Hey {name},", "Hi {name},", "{name},", "Thanks for the note, {name}.",
+              "Good to hear from you, {name}.", "Appreciate you getting back to me.",
+              "Thanks for the reply.", "Great to connect, {name}."]
 _SOFTENERS = ["Really liked your recent stuff.", "Been enjoying your content lately.",
               "Your last few posts have been great."]
 _CLOSERS = ["Let me know what you think.", "Happy to adjust, what feels right on your end?",
@@ -84,6 +89,24 @@ def render_template(decision: Decision, creator_name: str = "there",
                 f"work better for both of us: {_deal_phrase(decision.deal)}. {pitch}."
                 f"\n\n{close}")
 
+    if a == Action.ASK_HUMAN:
+        # Internal: nothing goes to the creator until the team replies.
+        return f"[agent asks the team: {decision.human_prompt}]"
+
+    if a == Action.PROPOSE_CALL:
+        deal_line = (f" In the meantime, where we stand: "
+                     f"{_deal_phrase(decision.deal)}." if decision.deal else "")
+        return (f"{g}\n\nWould love to get a call on the calendar so we can dig "
+                f"into the campaign properly. We could do "
+                f"{decision.answer_text}; let me know what works and we'll "
+                f"send the invite.{deal_line}\n\n{close}")
+
+    if a == Action.HOLD_FIRM:
+        return (f"{g}\n\nThanks for following up — this is still very much on "
+                f"our radar. Where we stand: {_deal_phrase(decision.deal)}. If "
+                f"that works on your end, we can get things moving right away."
+                f"\n\n{close}")
+
     if a == Action.ADD_SWEETENER:
         from .bundles import LEVER_PITCH
         pitch = LEVER_PITCH.get(decision.non_price_lever or "", "")
@@ -111,6 +134,34 @@ def render_template(decision: Decision, creator_name: str = "there",
     return f"{g}\n\n{close}"
 
 
+def write_message(decision: Decision, creator_name: str = "there",
+                  thread_history: str = "", seed: int | None = None) -> str:
+    """The outbound message for a decision: LLM-drafted when available, template
+    otherwise. A draft that does not state the deal's total is discarded — the
+    numbers come from the calculator, and a message that loses them is worse
+    than a template that keeps them."""
+    if decision.action in (Action.ASK_HUMAN, Action.PAUSE_HUMAN):
+        # Internal moves: nothing is drafted for the creator.
+        return render_template(decision, creator_name=creator_name, seed=seed)
+    prompt = build_llm_prompt(decision, creator_name, thread_history)
+    draft = llm.complete(prompt["system"], prompt["user"], max_tokens=400)
+    if draft and _numbers_intact(decision, draft):
+        return draft.strip()
+    return render_template(decision, creator_name=creator_name, seed=seed)
+
+
+def _numbers_intact(decision: Decision, draft: str) -> bool:
+    """True when the draft states the deal total (and per-video rate for a
+    multi-video flat deal). Guards against a reworded offer losing its price."""
+    d = decision.deal
+    if d is None or decision.action == Action.PROPOSE_CALL:
+        return True   # a call proposal need not restate the standing offer
+    required = [d.total_usd]
+    if not isinstance(d, Bundle) and d.video_count > 1:
+        required.append(d.flat_per_video)
+    return all(_money(x) in draft for x in required)
+
+
 def build_llm_prompt(decision: Decision, creator_name: str,
                      thread_history: str = "") -> dict:
     d = decision.deal
@@ -136,6 +187,14 @@ def build_llm_prompt(decision: Decision, creator_name: str,
         parts.append(f"Sweetener to mention: {decision.non_price_lever}")
     if decision.action == Action.ESCALATE_BUNDLE:
         parts.append("Frame the bundle as a bigger opportunity, not a fallback.")
+    if decision.action == Action.HOLD_FIRM:
+        parts.append("They followed up without a counter. Warmly reaffirm the "
+                     "standing offer; do not offer more money or new terms.")
+    if decision.action == Action.PROPOSE_CALL:
+        parts.append(f"Propose an intro call at: {decision.answer_text}. A "
+                     f"teammate will send the invite and run the call. Confirm "
+                     f"any availability they already gave; do not discuss new "
+                     f"prices.")
     if thread_history:
         parts.append(f"Prior thread (for tone):\n{thread_history}")
     parts.append("Write only the message body. No subject line.")

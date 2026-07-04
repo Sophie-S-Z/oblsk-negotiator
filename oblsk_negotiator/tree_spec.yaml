@@ -18,8 +18,16 @@
   handler: accept_on_confirm
 - guard: creator_asked             # they asked a question
   handler: answer_question
+- guard: contract_terms            # they're negotiating the paper, not the price
+  handler: escalate_human_contract
+- guard: call_context_missing      # they reference a call the agent wasn't on
+  handler: ask_human_call_context
+- guard: wants_call                # they want a call and there's no counter to price
+  handler: propose_call
 - guard: no_offer_yet              # no number on the table yet
   handler: open_or_soft_close
+- guard: no_new_ask                # a follow-up with no counter: hold, don't concede
+  handler: hold_position
 - guard: ask_acceptable            # their ask is at or below our max
   handler: accept_ask
 - guard: ask_extreme               # their ask is wildly above what the numbers support

@@ -13,6 +13,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Optional, Callable
 import time
+import zlib
 import numpy as np
 
 from .ev_engine import (CreatorEconomics, ViewModel, ev_distribution, ev_bundle,
@@ -20,7 +21,7 @@ from .ev_engine import (CreatorEconomics, ViewModel, ev_distribution, ev_bundle,
 from .state import NegotiationState, Status, AutonomyLevel
 from .behavior_tree import decide, Intent, CampaignContext, Decision, Action
 from .creator_sim import SimCreator
-from .prose import render_template
+from .prose import write_message
 from .qa import CampaignBrief
 from .rate_card import RateCard
 from .events import (EventLog, MESSAGE_RECEIVED, DECISION, APPROVAL, SENT,
@@ -91,6 +92,11 @@ def _deal_total(d: Optional[Deal]) -> Optional[float]:
     return None if d is None else d.total_usd
 
 
+def _history(transcript: list[TurnLog], last_n: int = 6) -> str:
+    """The last few turns as plain text, for the LLM to match tone."""
+    return "\n".join(f"{t.role}: {t.text}" for t in transcript[-last_n:])
+
+
 def run_negotiation(vm: ViewModel,
                     econ: CreatorEconomics,
                     ctx: CampaignContext,
@@ -103,12 +109,16 @@ def run_negotiation(vm: ViewModel,
                     approver: Approver = always_approve,
                     creator_id="c1", campaign_id="camp1", thread_id="t1",
                     creator_name="there",
+                    max_rounds=3,
                     max_turns=14,
                     verbose=False) -> NegotiationOutcome:
     brief = brief or CampaignBrief()
     state = NegotiationState(creator_id=creator_id, campaign_id=campaign_id,
-                             thread_id=thread_id, max_rounds=3,
+                             thread_id=thread_id, max_rounds=max_rounds,
                              autonomy_level=autonomy)
+    # A stable per-thread offset so the greeting/softener/closer vary from one
+    # thread to the next, instead of every thread's round 0 reading identically.
+    thread_seed = zlib.crc32(thread_id.encode()) % 100000
     transcript: list[TurnLog] = []
     approvals_requested = 0
     human_rejected = False
@@ -131,6 +141,15 @@ def run_negotiation(vm: ViewModel,
                    requires_approval=decision.requires_approval,
                    qa_count=state.questions_answered)
 
+        if decision.action == Action.ASK_HUMAN:
+            # The agent needs input only the team has. Pause the thread; a
+            # person answers, then the agent picks it back up with context.
+            transcript.append(TurnLog("agent", decision.action.value, None,
+                                      f"[asks the team: {decision.human_prompt}]"))
+            if verbose:
+                print(f"\nAGENT [ask_human]: {decision.human_prompt}")
+            break
+
         approved = True
         if decision.requires_approval:
             approvals_requested += 1
@@ -151,13 +170,18 @@ def run_negotiation(vm: ViewModel,
             state.record_approval(decision.action.value, total, "auto", "autonomous send")
             log.append(APPROVAL, action=decision.action.value, outcome="auto")
 
-        email = render_template(decision, creator_name=creator_name, seed=state.round_count)
+        email = write_message(decision, creator_name=creator_name,
+                              thread_history=_history(transcript),
+                              seed=thread_seed + state.round_count)
         transcript.append(TurnLog("agent", decision.action.value, total, email))
         log.append(SENT, action=decision.action.value, total=total)
         if verbose:
             who = "AGENT (approved, sent)" if decision.requires_approval else "AGENT (sent)"
             print(f"\n{who} [{decision.action.value}]:\n{email}")
-            print(f"   why: {decision.rationale}\n")
+            print(f"   why: {decision.rationale}")
+            if decision.human_prompt:
+                print(f"   NEEDS A HUMAN: {decision.human_prompt}")
+            print()
 
         if decision.action in (Action.ACCEPT, Action.SOFT_CLOSE,
                                 Action.ESCALATE_HUMAN, Action.PAUSE_HUMAN):
@@ -190,7 +214,9 @@ def run_negotiation(vm: ViewModel,
                     break
                 log.append(APPROVAL, action=decision.action.value, outcome="approved")
             transcript.append(TurnLog("agent", decision.action.value, total,
-                                      render_template(decision, creator_name)))
+                                      write_message(decision, creator_name,
+                                                    thread_history=_history(transcript),
+                                                    seed=thread_seed + state.round_count)))
             log.append(SENT, action=decision.action.value, total=total)
             if verbose:
                 print(f"\nAGENT [{decision.action.value}]: locking terms.")

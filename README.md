@@ -2,62 +2,109 @@
 
 An agent that prices every creator deal and negotiates like a real person, with someone signing off on each reply until it earns its way to sending on its own.
 
-There are two parts to this agent: the quantitative side, which does the math, and the communication side, which runs the conversation. When the negotiator considers a move, it bases its decision off of what the calculator determines each option is worth.
+There are two parts: the quantitative side, which does the math, and the communication side, which runs the conversation. When the negotiator considers a move, it bases its decision off what the calculator determines each option is worth — the LLM writes the words and reads the creator's messages, but it never invents a price or picks the move.
 
 ## The idea
 
-A creator's next video will not get their average number of views. Most posts land near their usual mark, and once in a while one runs far past it. Those rare hits are incredibly valuable, but they're hidden by an average. So the calculator fits a heavy-tailed model of the creator's views and draws thousands of outcomes from it, then reports the range: a soft downside, a typical case, an upside, the return on spend, and the odds the deal clears zero.
+A creator's next video will not get their average number of views. Most posts land near their usual mark, and once in a while one runs far past it. Those rare hits are incredibly valuable, but they're hidden by an average. So the calculator fits a heavy-tailed model of the creator's views (recency-weighted, with an organic-to-sponsored haircut) and draws thousands of outcomes from it, then reports the range: a soft downside, a typical case, an upside, the return on spend, and the odds the deal clears zero.
 
-That model is why the agent leans on bundles. It will revise a flat rate once, up to the most the ROI hurdle allows, but past that a lower price only hands value to the creator, whereas each added video is another independent shot at the tail. So the agent keeps the per-video rate fair, a small bulk discount for committing to several at once, and lets the total grow with the count. Oblsk's absolute net value multiplies while ROI stays high, and the creator is still paid fairly per video, so it's a deal they'll actually take.
+From that distribution it builds the **pricing ladder** every negotiation runs on:
 
-The negotiator is a behavior tree. One pass per message, top to bottom, first branch that fits wins. Its branch order lives in a small YAML file, so a step can be added or moved without touching the logic. It answers questions first, opens with one clean flat number, revises that number once toward the top of what the ROI hurdle allows if the creator pushes back, reshapes to a small bundle only if the revised number is rejected too, closes a thin gap, and hands off to a person when the ask is unreasonable or the rounds run out. As of right now, every outbound message waits for a human approval, but autonomy can be enabled with just one setting.
+- **anchor** — where to open: low but credible, leaves room to move up
+- **target** — where to aim: the fee that hits the campaign's ROI goal at expected delivery
+- **walk-away** — the ceiling: the p10 downside still clears the minimum ROI (or an optional CPM cap, whichever binds first)
+
+The negotiator opens at the anchor, revises once toward the target when the creator pushes back, and judges every ask against the ladder — accept at or under it, escalate to a person when an ask is a multiple of the walk-away. Past the target, a lower price only hands value to the creator, whereas each added video is another independent shot at the tail — so the next move is a bundle: a fair per-video rate, a small bulk discount, and a total that grows with the count. When the creator has a rate card, the bundle is composed from their own list prices at the market-standard combo discount.
+
+The conversation itself is a behavior tree: one pass per message, top to bottom, first branch that fits wins. A follow-up with no counter gets the standing offer restated, never an unforced concession; a message negotiating contract terms (exclusivity compensation, equity structure, kill fees) goes straight to a person — the agent never negotiates paper. The branch order lives in `tree_spec.yaml`, and every number the negotiator uses lives in the campaign config, so a campaign tunes its stance (ROI targets, anchor aggressiveness, bundle size, approval ceilings) in a YAML file, not code. Every outbound message waits for a human approval until autonomy is switched on.
+
+## Humans stay in the loop
+
+Beyond per-message approvals, the agent knows what it cannot do and asks:
+
+- **`ask_human`** — a question the brief doesn't cover ("is UNest FDIC insured?") or a reference to a call it wasn't on pauses the thread with a specific request to the team, instead of bluffing. The team answers; the agent keeps the thread.
+- **`propose_call`** — when the creator wants a call and there's no counter to price, the agent proposes the campaign's `call_windows` and flags a teammate to send the invite and run the call (the agent can't join calls). The handoff note asks whoever runs the call to write what was agreed back into the thread, so the agent isn't blind afterwards.
+- **`escalate_human`** — extreme asks, exhausted rounds, and contract-term negotiation hand the whole thread to a person.
+
+## Campaign config
+
+One YAML file per campaign holds the brief the agent answers questions from, the economics that price every deal, the full negotiation stance, and how to recognize our side of an email thread. `examples/unest_campaign.yaml` is a complete example built from a real campaign's program agreement and content guide:
+
+```bash
+py demo.py --campaign examples/unest_campaign.yaml --count 10 --quiet
+```
+
+## Where the LLM fits
+
+Set `ANTHROPIC_API_KEY` (optionally `OBLSK_LLM_MODEL`) and the agent uses Claude to:
+
+- **draft every outbound message** from the decision + the thread so far (`prose.write_message`) — a draft that drops the calculator's numbers is discarded;
+- **answer open-ended questions** from the campaign brief without ever quoting a rate (`qa.answer_question`);
+- **read real creator messages** into intent + ask for replay and live threads (`replay.interpret_message`, structured output).
+
+Every LLM call has a deterministic offline fallback (templates, keyword rules), so tests, CI, and the demo run with no network — set `OBLSK_NO_LLM=1` to force it.
+
+## Testing against real threads
+
+`replay.py` shadow-runs the agent over a chat or email thread your team handled manually. Paste the thread — a raw Gmail thread works as-is, sender headers, signatures, quoted replies, confidentiality footers and all — and at each creator message the report shows what the agent would have done (how it read the message, the move, the drafted reply, and why) next to what your team actually sent. Nothing is ever sent.
+
+```bash
+py demo.py --campaign examples/unest_campaign.yaml \
+           --replay examples/unest_thread.txt --median 150000
+```
+
+`examples/unest_thread.txt` is a real agency-run negotiation; on it the agent opens within $100 of the team's real opener, accepts the same $2,000/video the team agreed, holds firm on the "just following up" nudges, proposes the intro call when the manager confirms availability (flagging a teammate to run it), and escalates the contract-revision email to a human. `--median` is the creator's typical per-video views, so the ladder prices the same deal your team was pricing.
+
+### Sparring: Claude plays the other side
+
+To probe conversation quality beyond history, have Claude role-play the creator's manager against the agent and judge the transcript (needs `ANTHROPIC_API_KEY`):
+
+```bash
+py demo.py --campaign examples/unest_campaign.yaml \
+           --spar "the creator's floor is $2,600/video; open by asking $4,500; cite her reach; concede slowly; suggest a call once"
+```
+
+The manager's private playbook is whatever you type; the report shows every exchange with the agent's move and rationale, so a human can grade the back-and-forth.
 
 ## Layout
 
 ```
 oblsk_negotiator/      the package
-  ev_engine.py         the calculator: heavy-tailed view model & Monte Carlo
-  rate_card.py         creator formats and their rates; builds multi-format packages
-  bundles.py           the deals the agent can offer
-  behavior_tree.py     the decision logic (one move per message)
+  ev_engine.py         heavy-tailed view model & Monte Carlo; every number starts here
+  pricing.py           the ladder (anchor/target/walk-away), authenticity risk, CPM benchmarks
+  rate_card.py         creator formats and their rates; market-standard bundle discounts
+  bundles.py           the deals the agent can offer, incl. multi-format composition
+  behavior_tree.py     the decision logic (one move per message) + CampaignContext config
   tree_spec.yaml       the branch order the tree walks, as config
-  qa.py                answers questions from the campaign brief
-  prose.py             turns a decision into one human message
+  qa.py                answers questions from the campaign brief (LLM-first)
+  prose.py             turns a decision into one human message (LLM-first)
+  llm.py               the one wrapper around the Anthropic SDK, with offline fallback
+  campaign.py          one YAML per campaign: brief, economics, stance, aliases
+  replay.py            shadow-run the agent over real chat/email threads
+  spar.py              Claude plays the creator's manager; agent negotiates back
   state.py             one DB row per thread: phase, rounds, approvals, autonomy
   events.py            the same thread as an append-only event log
-  creator_sim.py       stand-in creators for end-to-end testing
+  creator_sim.py       a parameterized simulated creator for closed-loop testing
   runner.py            the loop, the approval gate, the metrics
-tests/                 30 checks
-notebooks/             a Colab walkthrough
-figures/               the architecture and behavior-tree diagrams
+tests/                 50 checks, all offline
+examples/              campaign config + real and sample threads for replay
+docs/                  AGENT_GUIDE.pdf (how to use it) + CALCULATOR.md (the pricing model)
+figures/               architecture and behavior-tree diagrams
 ```
 
-## File breakdown
-
-| File | Role | What it does |
-|------|------|--------------|
-| `ev_engine.py` | Calculator | Fits the heavy-tailed view model and runs the Monte Carlo. Every number starts here. Scores a single deal or a multi-format bundle. |
-| `rate_card.py` | Calculator | Holds each creator's formats and rates and composes a multi-format package that clears the ROI hurdle. |
-| `bundles.py` | Calculator | Builds the flat offer, the bundle, and the non-price sweeteners. |
-| `behavior_tree.py` | Negotiator | Picks one move per message and reads the calculator to do it. No pricing math itself. |
-| `tree_spec.yaml` | Negotiator | The branch order as data: guard and handler names the tree walks in turn. Adding a step is a config edit. |
-| `qa.py` | Negotiator | Answers a creator's questions from the brief and nudges toward the next step. |
-| `prose.py` | Negotiator | Turns a decision into one short, human-sounding message. One offer, never a menu. |
-| `state.py` | Memory | One database row per thread. Saves and reloads cleanly so a thread can pause and resume. |
-| `events.py` | Memory | The same history as an append-only log; the row is a fold over it, so the log can become the source of truth. |
-| `creator_sim.py` | Testing | Stand-in creators with different temperaments. |
-| `runner.py` | Glue | Runs the loop, enforces the approval gate, tallies win rate, rounds, discount, and ROI. |
-
-The demo writes its messages from templates so it runs anywhere with no network.
-In production, the same decisions and numbers go to a language model that writes the wording. That model never invents a price or decides the move.
+The pricing ladder, recency weighting, sponsored haircut, authenticity heuristic, and CPM benchmark table are ported from the influencer-calculator pricing-engine upgrade (PR #1 on eyalcohen2524/influencer-calculator), adapted to run on the Monte Carlo instead of a bootstrap. The CPM table is a placeholder — calibrate against closed deals before trusting absolute dollars.
 
 ## Running it
 
 ```bash
 pip install -r requirements.txt
-python -m pytest                 # 30 checks
+pip install anthropic                    # optional: enables the LLM path
+python -m pytest                         # 50 checks, offline
+
+py demo.py                               # one simulated negotiation
+py demo.py --floor 2800 --opens ask      # a harder creator
+py demo.py --count 20 --quiet            # 20 varied runs + aggregate metrics
+py demo.py --campaign examples/unest_campaign.yaml --replay examples/unest_thread.txt
 ```
 
-The notebook in `notebooks/` runs the whole thing in Colab: the pricing thesis, a
-full negotiation with approvals, a creator the agent hands off, and a sweep
-across creator types.
+The notebook in `notebooks/` walks the same ground interactively: the pricing thesis and the ladder, a live negotiation with approvals, the real-thread replay, and the metrics sweep.

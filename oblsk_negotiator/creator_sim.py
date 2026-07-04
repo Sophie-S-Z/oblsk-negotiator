@@ -1,19 +1,23 @@
 """
-Simulated creators for end-to-end testing. Rule-based and deterministic, so full
+A simulated creator for end-to-end testing. Rule-based and deterministic, so full
 negotiations run without real people. A creator can open with questions, open with
-interest and let the agent move first, or open by naming a number.
+interest and let the agent move first, or open by naming a number; every other
+disposition (how hard they counter, whether volume moves them, when they walk) is
+a constructor parameter, not a named persona.
 
 A creator values pay *per video*: their floor is a per-video reservation, not a
 flat total. Committing to several videos at once is worth a little to them
 (guaranteed work, one negotiation), so they will accept a small bulk discount per
 video, but only down to their floor and only up to a sane number of videos. This
 is why a bundle that triples the work for the same money is correctly rejected.
+
+For testing the agent against *real* threads instead of a simulation, see
+replay.py.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import Enum
 from typing import Optional
 import numpy as np
 
@@ -22,17 +26,8 @@ from .ev_engine import Bundle
 from .rate_card import RateCard
 
 
-class Personality(str, Enum):
-    INQUISITIVE = "inquisitive"
-    PRICE_SENSITIVE = "price_sensitive"
-    VOLUME_FRIENDLY = "volume_friendly"
-    AGGRESSIVE = "aggressive"
-    EASYGOING = "easygoing"
-
-
 @dataclass
 class SimCreator:
-    personality: Personality
     reservation_per_video: float       # private floor per video they will accept
     opening_ask: float = 0.0           # per-video number, if they open by naming one
     opens_with: str = "interest"       # question | interest | ask
@@ -42,6 +37,7 @@ class SimCreator:
     max_videos: int = 4                 # most videos they'll commit to at once
     rate_card: Optional[RateCard] = None  # their list prices, for judging a bundle
     max_bundle_discount: float = 0.20    # most off list they'll take on a package
+    walks_if_lowballed: bool = False     # rejects outright after repeated low offers
     rng_seed: int = 0
 
     def __post_init__(self):
@@ -97,7 +93,7 @@ class SimCreator:
                 return CreatorMessage(intent=Intent.ACCEPTED,
                                       raw_text="That works for me, let's do it.")
 
-            if (self.personality == Personality.AGGRESSIVE and
+            if (self.walks_if_lowballed and
                     offered_per_video < 0.7 * self.reservation_per_video and
                     self._rounds >= 3):
                 return CreatorMessage(intent=Intent.REJECTING,
@@ -149,25 +145,3 @@ class SimCreator:
             intent=Intent.NEGOTIATING, ask_total_usd=round(new_total, -1),
             ask_video_count=bundle.video_count,
             raw_text=f"Could you get closer to ${new_total:,.0f} for the package?")
-
-
-PERSONAS = {
-    "inquisitive": lambda seed=0: SimCreator(
-        Personality.INQUISITIVE, reservation_per_video=2450, opens_with="question",
-        questions=["What would the deliverables be for this?",
-                   "And what's the timeline looking like?"],
-        counter_ratio=0.6, bulk_tolerance=0.06, max_videos=4, rng_seed=seed),
-    "price_sensitive": lambda seed=0: SimCreator(
-        Personality.PRICE_SENSITIVE, reservation_per_video=2450, opens_with="interest",
-        counter_ratio=0.35, bulk_tolerance=0.0, max_videos=3, rng_seed=seed),
-    "volume_friendly": lambda seed=0: SimCreator(
-        Personality.VOLUME_FRIENDLY, reservation_per_video=2450, opens_with="interest",
-        counter_ratio=0.6, bulk_tolerance=0.10, max_videos=5, rng_seed=seed),
-    "aggressive": lambda seed=0: SimCreator(
-        Personality.AGGRESSIVE, reservation_per_video=2700, opening_ask=3500,
-        opens_with="ask", counter_ratio=0.45, bulk_tolerance=0.0, max_videos=3,
-        rng_seed=seed),
-    "easygoing": lambda seed=0: SimCreator(
-        Personality.EASYGOING, reservation_per_video=1700, opens_with="interest",
-        counter_ratio=0.7, bulk_tolerance=0.08, max_videos=5, rng_seed=seed),
-}

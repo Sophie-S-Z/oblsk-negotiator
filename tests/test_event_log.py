@@ -2,11 +2,12 @@
 Event-log tests.
 
 The point of the log is that the negotiation row is reconstructable from it. So
-the core test runs real negotiations across every persona and seed, folds the
-log, and asserts the fold agrees with the outcome the runner reported: same
-rounds, same questions answered, same status, same final total. A second test
-drives a multi-format deal to a bundle close and checks the structural flags the
-fold derives. The rest check append-only integrity and JSON round-tripping.
+the core test runs real negotiations across a spread of creator temperaments and
+seeds, folds the log, and asserts the fold agrees with the outcome the runner
+reported: same rounds, same questions answered, same status, same final total.
+A second test drives a multi-format deal to a bundle close and checks the
+structural flags the fold derives. The rest check append-only integrity and
+JSON round-tripping.
 """
 
 from __future__ import annotations
@@ -18,7 +19,7 @@ import numpy as np
 from oblsk_negotiator.events import EventLog, fold_events, DECISION
 from oblsk_negotiator.runner import run_negotiation
 from oblsk_negotiator.behavior_tree import CampaignContext
-from oblsk_negotiator.creator_sim import PERSONAS
+from oblsk_negotiator.creator_sim import SimCreator
 from oblsk_negotiator.ev_engine import (CreatorEconomics, FormatSpec, FormatCatalog,
                                         fit_view_model)
 from oblsk_negotiator.rate_card import RateCard, IG_REEL, IG_STORY, TIKTOK
@@ -27,22 +28,38 @@ from oblsk_negotiator.qa import CampaignBrief
 CTX = CampaignContext()
 ECON = CreatorEconomics(conversion_rate=0.0016, ltv_usd=80)
 
+SIM_CONFIGS = [
+    dict(reservation_per_video=2450, opens_with="question",
+         questions=["What would the deliverables be for this?",
+                    "And what's the timeline looking like?"],
+         counter_ratio=0.6, bulk_tolerance=0.06),
+    dict(reservation_per_video=2450, counter_ratio=0.35, bulk_tolerance=0.0,
+         max_videos=3),
+    dict(reservation_per_video=2450, counter_ratio=0.6, bulk_tolerance=0.10,
+         max_videos=5),
+    dict(reservation_per_video=2700, opening_ask=3500, opens_with="ask",
+         counter_ratio=0.45, bulk_tolerance=0.0, max_videos=3,
+         walks_if_lowballed=True),
+    dict(reservation_per_video=1700, counter_ratio=0.7, bulk_tolerance=0.08,
+         max_videos=5),
+]
+
 
 def _vm(median, seed=0):
     rng = np.random.default_rng(seed)
     return fit_view_model(rng.lognormal(np.log(median), 0.6, 24).tolist())
 
 
-def test_fold_matches_outcome_across_personas():
+def test_fold_matches_outcome_across_creators():
     vm = _vm(50000)
-    for name in PERSONAS:
+    for i, cfg in enumerate(SIM_CONFIGS):
         for seed in range(6):
-            o = run_negotiation(vm, ECON, CTX, PERSONAS[name](seed=seed))
+            o = run_negotiation(vm, ECON, CTX, SimCreator(**cfg, rng_seed=seed))
             f = fold_events(o.event_log)
-            assert f["round_count"] == o.rounds, (name, seed, "rounds")
-            assert f["questions_answered"] == o.questions_answered, (name, seed, "qa")
-            assert f["status"] == o.status, (name, seed, "status")
-            assert f["final_total"] == o.final_total, (name, seed, "final_total")
+            assert f["round_count"] == o.rounds, (i, seed, "rounds")
+            assert f["questions_answered"] == o.questions_answered, (i, seed, "qa")
+            assert f["status"] == o.status, (i, seed, "status")
+            assert f["final_total"] == o.final_total, (i, seed, "final_total")
 
 
 def test_fold_matches_outcome_multiformat():
@@ -60,7 +77,9 @@ def test_fold_matches_outcome_multiformat():
                           allowed_formats=[IG_REEL, IG_STORY, TIKTOK])
     for seed in range(4):
         o = run_negotiation(_vm(1_200_000), econ_mf, CTX,
-                            PERSONAS["volume_friendly"](seed=seed),
+                            SimCreator(reservation_per_video=2450,
+                                       counter_ratio=0.6, bulk_tolerance=0.10,
+                                       max_videos=5, rng_seed=seed),
                             brief=brief, catalog=catalog, rate_card=card)
         f = fold_events(o.event_log)
         assert f["round_count"] == o.rounds
@@ -69,9 +88,12 @@ def test_fold_matches_outcome_multiformat():
 
 
 def test_fold_reconstructs_structural_flags():
-    # A persona that rejects through the whole ladder: open, revised flat, bundle.
-    # The fold should recover each of those structural facts from the log alone.
-    o = run_negotiation(_vm(50000), ECON, CTX, PERSONAS["volume_friendly"](seed=0))
+    # A creator whose floor sits above our target rejects through the whole
+    # ladder: open, revised flat, bundle. The fold should recover each of those
+    # structural facts from the log alone.
+    o = run_negotiation(_vm(50000), ECON, CTX,
+                        SimCreator(reservation_per_video=4200, counter_ratio=0.2,
+                                   bulk_tolerance=0.0, max_videos=4, rng_seed=0))
     actions = [e.data["action"] for e in o.event_log if e.kind == DECISION]
     assert actions.count("opening_flat") >= 2 and "escalate_bundle" in actions
     f = fold_events(o.event_log)
@@ -83,7 +105,11 @@ def test_fold_reconstructs_structural_flags():
 
 
 def test_log_is_append_only_and_serializes():
-    o = run_negotiation(_vm(50000), ECON, CTX, PERSONAS["aggressive"](seed=1))
+    o = run_negotiation(_vm(50000), ECON, CTX,
+                        SimCreator(reservation_per_video=2700, opening_ask=3500,
+                                   opens_with="ask", counter_ratio=0.45,
+                                   bulk_tolerance=0.0, max_videos=3,
+                                   walks_if_lowballed=True, rng_seed=1))
     events = o.event_log.events
     assert len(events) >= 2
     # Sequence numbers are contiguous from zero and timestamps never go backwards:

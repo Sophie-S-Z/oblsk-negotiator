@@ -3,15 +3,18 @@ Q&A mode. Answers a creator's questions before any rate is on the table:
 deliverables, timeline, usage, payment, and anything off-topic. A budget
 question is the signal to move to an offer.
 
-answer_from_brief is deterministic and runs with no network (Colab, tests, and a
-safe fallback). build_qa_llm_prompt is the prompt for the production model, which
-handles open-ended questions in the same voice and never quotes a rate.
+answer_question is the entry point: LLM-drafted from the brief when available
+(build_qa_llm_prompt), falling back to answer_from_brief — the deterministic
+keyword version — offline. Neither path ever quotes a rate; money questions
+route to the offer instead.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Optional
+
+from . import llm
 
 
 @dataclass
@@ -72,6 +75,27 @@ def signals_ready_for_offer(question: str) -> bool:
     return classify_question_topic(question) == "budget"
 
 
+def can_answer(question: str, brief: CampaignBrief) -> bool:
+    """Whether the brief covers this question. Anything it does not cover
+    (ingredient details, medical claims, things said on a call) is a question
+    for the team, not something to bluff through — the tree routes those to
+    ASK_HUMAN instead of answering."""
+    topic = classify_question_topic(question)
+    if topic != "general":
+        return True
+    return _extra_fact_for(question, brief) is not None
+
+
+def _extra_fact_for(question: str, brief: CampaignBrief):
+    """An extra_facts entry whose key appears in the question (keys are keywords
+    like 'equity', not full sentences)."""
+    q = question.strip().lower()
+    for key, fact in brief.extra_facts.items():
+        if key.strip().lower() in q:
+            return fact
+    return None
+
+
 def forward_nudge(questions_answered: int, offer_on_table: bool) -> str:
     """A short line that moves the conversation toward the next step, sized to how
     far along the thread is. Appended to a Q&A answer so the agent does not just
@@ -104,10 +128,25 @@ def answer_from_brief(question: str, brief: CampaignBrief) -> str:
     }
     if topic in answers:
         return answers[topic]
-    if question.strip().lower() in brief.extra_facts:
-        return brief.extra_facts[question.strip().lower()]
+    fact = _extra_fact_for(question, brief)
+    if fact is not None:
+        return fact
     return ("Happy to help with that. I can walk you through the deliverables, "
             "timeline, usage, or anything else on your mind, just let me know.")
+
+
+def answer_question(question: str, brief: CampaignBrief,
+                    thread_history: str = "") -> str:
+    """Answer a creator question: LLM from the brief when available, keyword
+    fallback otherwise. Budget questions never get an answer here — the caller
+    routes them to an offer — but guard anyway so no path quotes a rate."""
+    if classify_question_topic(question) == "budget":
+        return answer_from_brief(question, brief)
+    prompt = build_qa_llm_prompt(question, brief, thread_history)
+    draft = llm.complete(prompt["system"], prompt["user"], max_tokens=300)
+    if draft and "$" not in draft:
+        return draft.strip()
+    return answer_from_brief(question, brief)
 
 
 def build_qa_llm_prompt(question: str, brief: CampaignBrief,

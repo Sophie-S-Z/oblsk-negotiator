@@ -9,5 +9,6 @@ dist/
 
 # build artifacts from the proposal/figures tooling
 docs/*.pdf
+!docs/AGENT_GUIDE.pdf
 docs/page-*.jpg
 node_modules/

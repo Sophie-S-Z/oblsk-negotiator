@@ -10,13 +10,17 @@ same order, so keep them in step.
 
 Order of branches (see tree_spec.yaml for the source of truth):
   human stepped in            -> pause, hand back
-  creator accepted            -> lock terms
-  creator asked a question    -> answer, stay in Q&A
-  no offer yet                -> open with one flat number
+  creator accepted our offer  -> lock terms
+  creator asked a question    -> answer from the brief, or ask the team
+  negotiating contract terms  -> escalate to a person (never negotiate paper)
+  references a call we missed -> ask the team for that context
+  wants a call, no counter    -> propose call windows, a human runs the call
+  no offer yet                -> open with one flat number (the anchor)
+  follow-up with no counter   -> hold the standing offer, concede nothing
   their ask is fine for us    -> accept
-  their ask is wildly high     -> escalate to a person
+  their ask is wildly high    -> escalate to a person
   out of rounds               -> escalate to a person
-  flat was rejected           -> revise the flat once, up to our ROI ceiling
+  flat was rejected           -> revise once, up to the ladder's target
   revised flat also rejected  -> escalate to a bundle (one offer)
   bundle on the table         -> add a sweetener, else escalate
 """
@@ -32,9 +36,11 @@ from .ev_engine import (CreatorEconomics, Deal, ViewModel, ev_distribution, EVRe
                         Bundle, FormatCatalog, ev_bundle, deal_to_dict, deal_from_dict)
 from .bundles import (flat_offer, bundle_from_flat, add_non_price_sweetener,
                       compose_bundle, bundle_format_summary)
+from .pricing import PricingPolicy, PriceLadder, price_ladder
 from .rate_card import RateCard
 from .state import NegotiationState, Status, Phase, AutonomyLevel
-from .qa import CampaignBrief, answer_from_brief, classify_question_topic, forward_nudge
+from .qa import (CampaignBrief, answer_question, can_answer,
+                classify_question_topic, forward_nudge)
 
 
 class Intent(str, Enum):
@@ -52,19 +58,53 @@ class CreatorMessage:
     ask_total_usd: Optional[float] = None
     ask_video_count: Optional[int] = None
     raw_text: str = ""
+    # The message negotiates contract/legal terms (exclusivity compensation,
+    # equity structure, kill fees, indemnities) rather than just price. The
+    # agent never negotiates paper: these go to a person.
+    contract_terms: bool = False
+    # They propose, request, or confirm availability for a call. Calls are run
+    # by real people; the agent only gets one on the calendar.
+    wants_call: bool = False
+    # They reference a call or conversation the agent was not part of. That
+    # context lives with the team, so the agent asks before acting on it.
+    refers_to_call: bool = False
 
 
 @dataclass
 class CampaignContext:
-    """Per-campaign knobs."""
-    time_pressure: bool = False
-    alternatives_available: bool = True
+    """Per-campaign knobs. Every number the negotiator uses lives here, so a
+    campaign tunes its stance in config instead of editing pricing code."""
     auto_send_dollar_ceiling: float = 3000.0  # above this, a person signs off
-    roi_hurdle: float = 3.0                    # min revenue/cost multiple
-    pay_fraction: float = 0.30                 # opening flat as share of EV/video
+
+    # The pricing ladder (see pricing.py): where we open, aim, and stop.
+    roi_target: float = 3.0                    # revenue/cost multiple we aim for
+    roi_min: float = 1.0                       # multiple the p10 downside must clear
+    anchor_factor: float = 0.62                # opening offer as fraction of target
+    cpm_cap_usd: Optional[float] = None        # optional $ per 1,000 expected views cap
+    risk_discount: float = 1.0                 # authenticity multiplier on the downside
+    min_offer_usd: float = 250.0               # never open below this
+
+    # Negotiation stance.
     accept_margin: float = 1.05                # accept asks within this of our max
-    extreme_ask_multiple: float = 2.0          # above this multiple, escalate
-    qa_offer_after: int = 3                     # answered questions before we open an offer
+    extreme_ask_multiple: float = 2.0          # asks above this multiple of the
+                                               # walk-away ceiling go to a person
+    qa_offer_after: int = 3                    # answered questions before we open an offer
+    target_videos: int = 3                     # videos in the single-format bundle
+    bundle_bulk_discount: float = 0.10         # per-video discount for committing to several
+    ask_bulk_discount: float = 0.05            # lighter discount when anchored to their ask
+    high_value_threshold_usd: float = 5000.0   # expected revenue/video that flags follow-up
+    money_step: float = 50.0                   # round flat offers to this
+    bundle_money_step: float = 100.0           # round bundle totals to this
+    call_windows: str = ""                     # when our team can take intro calls,
+                                               # e.g. "Thursday after 3 PM ET"; the
+                                               # agent proposes these, a human runs
+                                               # the call
+
+    def pricing_policy(self) -> PricingPolicy:
+        return PricingPolicy(
+            roi_target=self.roi_target, roi_min=self.roi_min,
+            anchor_factor=self.anchor_factor, cpm_cap_usd=self.cpm_cap_usd,
+            risk_discount=self.risk_discount, min_offer_usd=self.min_offer_usd)
 
 
 class Action(str, Enum):
@@ -72,8 +112,11 @@ class Action(str, Enum):
     OPENING_FLAT = "opening_flat"
     ESCALATE_BUNDLE = "escalate_bundle"
     ADD_SWEETENER = "add_sweetener"
+    HOLD_FIRM = "hold_firm"               # restate the standing offer, concede nothing
+    PROPOSE_CALL = "propose_call"         # get a call on the calendar (a human runs it)
     ACCEPT = "accept"
     SOFT_CLOSE = "soft_close"
+    ASK_HUMAN = "ask_human"               # pause; ask the team for missing context
     ESCALATE_HUMAN = "escalate_human"     # hand the thread to a person
     PAUSE_HUMAN = "pause_human"           # a person stepped in mid-thread
 
@@ -81,7 +124,8 @@ class Action(str, Enum):
 # Actions that send a message to the creator (so they pass through approval).
 _OUTBOUND = {
     Action.ANSWER_QUESTION, Action.OPENING_FLAT, Action.ESCALATE_BUNDLE,
-    Action.ADD_SWEETENER, Action.ACCEPT, Action.SOFT_CLOSE,
+    Action.ADD_SWEETENER, Action.HOLD_FIRM, Action.PROPOSE_CALL,
+    Action.ACCEPT, Action.SOFT_CLOSE,
 }
 
 
@@ -96,6 +140,9 @@ class Decision:
     non_price_lever: Optional[str] = None
     reserve_deal: Optional[Deal] = None  # what we would reveal next if rejected
     reserve_ev: Optional[EVResult] = None
+    # What the agent needs from the team: the specific question to answer
+    # (ASK_HUMAN) or the follow-through to do (PROPOSE_CALL: run the call).
+    human_prompt: Optional[str] = None
 
 
 def _requires_approval(action: Action, total: Optional[float],
@@ -110,81 +157,78 @@ def _requires_approval(action: Action, total: Optional[float],
 
 
 # ---- valuation: read the calculator, decide what we will pay ----------------
+# All dollar positions come from the pricing ladder (pricing.py): open at the
+# anchor, revise toward the target, never cross the walk-away ceiling.
 
 def _round_money(x: float, step: float = 50.0) -> float:
     """Round an offer to a clean number, the way a person would write it."""
     return float(round(x / step) * step)
 
 
-def _fair_flat_total(vm: ViewModel, econ: CreatorEconomics,
-                     ctx: CampaignContext) -> float:
-    """What we will pay for one video: a slice of the expected revenue it drives,
-    floored so it never goes silly-low on a small creator."""
-    exp_rev_per_video = vm.median_views * econ.revenue_per_view
-    return max(250.0, ctx.pay_fraction * exp_rev_per_video)
+def _ladder(vm: ViewModel, econ: CreatorEconomics,
+            ctx: CampaignContext) -> PriceLadder:
+    """The single-video ladder for this creator under this campaign's policy."""
+    return price_ladder(vm, econ, ctx.pricing_policy(), video_count=1,
+                        n_samples=8000, seed=11)
 
 
 def _flat_total(vm, econ, ctx) -> float:
-    return _round_money(_fair_flat_total(vm, econ, ctx), 50.0)
+    """The opening flat: the ladder's anchor, rounded to a clean number."""
+    return _round_money(_ladder(vm, econ, ctx).anchor, ctx.money_step)
 
 
 def _max_pay_per_video(vm, econ, ctx) -> float:
-    """Oblsk's ceiling: the most per video that still clears the ROI hurdle. Uses
-    the same conservative (median-based) revenue proxy as the opening flat, so the
-    agent never pays a rate that the campaign cannot justify on the numbers."""
-    exp_rev_per_video = vm.median_views * econ.revenue_per_view
-    if ctx.roi_hurdle <= 0:
-        return exp_rev_per_video
-    return exp_rev_per_video / ctx.roi_hurdle
+    """Oblsk's ceiling: the ladder's walk-away, where the p10 downside still
+    clears the minimum ROI (or the CPM cap, whichever binds first)."""
+    return _ladder(vm, econ, ctx).walk_away
 
 
 def _revised_flat_total(vm, econ, ctx, ask_per_video: Optional[float] = None) -> float:
     """Our revised single-video number after the opening flat is rejected: move up
-    to the ROI ceiling, the most the numbers allow, but never above it and never
-    above what the creator asked. This is the last single-video offer before we
-    restructure the deal into a bundle."""
-    ceiling = _max_pay_per_video(vm, econ, ctx)
-    target = ceiling if not ask_per_video else min(ceiling, ask_per_video)
-    return _round_money(target, 50.0)
-
-
-# A small bulk discount the creator grants for committing to several videos at
-# once. Off our own fair rate when we anchor there; a lighter touch when we anchor
-# to the creator's revealed ask, so the rate still clears their (private) floor.
-_BUNDLE_BULK_DISCOUNT = 0.10
-_ASK_BULK_DISCOUNT = 0.05
+    to the ladder's target — the fee that still hits the campaign's ROI goal at
+    expected delivery — or meet the creator's ask if it sits below the target.
+    The walk-away above the target is held in reserve for judging their asks,
+    never offered proactively."""
+    lad = _ladder(vm, econ, ctx)
+    up_to = lad.target if not ask_per_video else min(lad.target, ask_per_video)
+    return max(_round_money(up_to, ctx.money_step), _flat_total(vm, econ, ctx))
 
 
 def _bundle_per_video(vm, econ, ctx, ask_per_video: Optional[float] = None) -> float:
-    """The per-video rate for a bundle. Pay our fair rate (less a bulk discount);
-    if the creator has revealed a higher per-video ask, meet them just under it so
-    the rate is one they will actually accept. Never exceed the ROI ceiling."""
-    fair = _fair_flat_total(vm, econ, ctx)
-    floor = fair * (1.0 - _BUNDLE_BULK_DISCOUNT)
-    target = floor
+    """The per-video rate for a bundle. Start from the ladder's target less a bulk
+    discount (standard for committing to several videos at once); if the creator
+    has revealed a higher per-video ask, meet them just under it so the rate is
+    one they will actually accept. Never exceed the walk-away ceiling."""
+    lad = _ladder(vm, econ, ctx)
+    floor = lad.target * (1.0 - ctx.bundle_bulk_discount)
+    per_video = floor
     if ask_per_video:
-        target = max(floor, ask_per_video * (1.0 - _ASK_BULK_DISCOUNT))
-    return min(target, _max_pay_per_video(vm, econ, ctx))
+        per_video = max(floor, ask_per_video * (1.0 - ctx.ask_bulk_discount))
+    return min(per_video, lad.walk_away)
 
 
 def _bundle_total(vm, econ, ctx, ask_per_video: Optional[float] = None,
-                  target_videos: int = 3) -> float:
+                  target_videos: Optional[int] = None) -> float:
+    videos = target_videos or ctx.target_videos
     per_video = _bundle_per_video(vm, econ, ctx, ask_per_video)
-    return _round_money(per_video * target_videos, 100.0)
+    return _round_money(per_video * videos, ctx.bundle_money_step)
 
 
-def _willingness_to_pay(state, vm, econ, ctx) -> float:
-    """The most we would happily pay right now. Once a bundle is on the table we
-    judge an ask against the bundle total: for a composed multi-format bundle that
-    total already clears ROI, so it is our ceiling; for a single-format bundle we
-    anchor to the creator's first ask so the comparison is like-for-like."""
+def _willingness_per_video(state, vm, econ, ctx) -> float:
+    """The most per video we would happily pay right now. We concede up the
+    ladder as the thread progresses: the target while the simple flat deal is
+    live, the walk-away once we have already revised (closing under the ceiling
+    beats losing the deal), and once a bundle is on the table, the rate of the
+    bundle we put there (a composed bundle already clears ROI by construction)."""
     if state.bundle_offered and state.concession_history:
         last = deal_from_dict(state.concession_history[-1].deal)
         if isinstance(last, Bundle):
-            return last.total_usd
+            return last.flat_per_video
     if state.bundle_offered:
-        return _bundle_total(vm, econ, ctx, ask_per_video=state.creator_first_ask)
-    return _flat_total(vm, econ, ctx)
+        return _bundle_per_video(vm, econ, ctx,
+                                 ask_per_video=state.creator_first_ask)
+    lad = _ladder(vm, econ, ctx)
+    return lad.walk_away if state.flat_revised else lad.target
 
 
 def _score(deal: Deal, vm: ViewModel, econ: CreatorEconomics,
@@ -204,8 +248,9 @@ def _score_any(deal, vm: ViewModel, econ: CreatorEconomics,
     return ev_distribution(vm, deal, econ, n_samples=8000, seed=seed)
 
 
-def _is_high_value(vm: ViewModel, econ: CreatorEconomics) -> bool:
-    return vm.median_views * econ.revenue_per_view > 5000.0
+def _is_high_value(vm: ViewModel, econ: CreatorEconomics,
+                   ctx: CampaignContext) -> bool:
+    return vm.median_views * econ.revenue_per_view > ctx.high_value_threshold_usd
 
 
 # ---- the tree ---------------------------------------------------------------
@@ -251,7 +296,8 @@ def _opening_flat(state, vm, econ, ctx, *, reason: str) -> Decision:
     state.record_concession(deal_to_dict(deal), deal.total_usd, None,
                             video_count=deal.video_count)
 
-    reserve = bundle_from_flat(deal)
+    reserve = bundle_from_flat(deal, target_videos=ctx.target_videos,
+                               bulk_discount=ctx.bundle_bulk_discount)
     reserve_ev = _score(reserve, vm, econ, seed=4)
     return Decision(
         action=Action.OPENING_FLAT, deal=deal, ev=ev,
@@ -263,7 +309,7 @@ def _opening_flat(state, vm, econ, ctx, *, reason: str) -> Decision:
                                              state, ctx))
 
 
-def _escalate_bundle(state, vm, econ, ctx, ask, *,
+def _escalate_bundle(state, vm, econ, ctx, ask, ask_per_video=None, *,
                      brief: Optional[CampaignBrief] = None,
                      catalog: Optional[FormatCatalog] = None,
                      rate_card: Optional[RateCard] = None) -> Decision:
@@ -279,7 +325,7 @@ def _escalate_bundle(state, vm, econ, ctx, ask, *,
     brief = brief or CampaignBrief()
     if catalog is not None and rate_card is not None:
         composed = compose_bundle(
-            rate_card, catalog, roi_hurdle=ctx.roi_hurdle,
+            rate_card, catalog, roi_hurdle=ctx.roi_target,
             primary_fmt=brief.primary_format,
             allowed_formats=brief.allowed_formats)
         if composed is not None:
@@ -289,9 +335,9 @@ def _escalate_bundle(state, vm, econ, ctx, ask, *,
     # The flat counter is a per-single-video number, so it anchors the bundle's
     # per-video rate. Hold that rate near their ask and add videos: each one is an
     # independent draw, so the total return scales while the rate stays fair.
-    target_videos = 3
-    per_video = _bundle_per_video(vm, econ, ctx, ask_per_video=ask)
-    total = _round_money(per_video * target_videos, 100.0)
+    target_videos = ctx.target_videos
+    per_video = _bundle_per_video(vm, econ, ctx, ask_per_video=ask_per_video)
+    total = _round_money(per_video * target_videos, ctx.bundle_money_step)
     bundle = Deal(video_count=target_videos, flat_per_video=total / target_videos)
     ev = _score(bundle, vm, econ, seed=7)
 
@@ -382,14 +428,14 @@ def _accept_ask(msg, state, vm, econ, ctx, willingness) -> Decision:
     return Decision(
         action=Action.ACCEPT, deal=deal, ev=ev,
         rationale=f"Accept ${ask:,.0f} across {deal.video_count} video(s). At or "
-                  f"below our max (${willingness:,.0f}), ROI {ev.roi_mean:.1f}x.",
+                  f"below our max (${willingness:,.0f}/video), ROI {ev.roi_mean:.1f}x.",
         requires_approval=_requires_approval(Action.ACCEPT, deal.total_usd,
                                              state, ctx))
 
 
 def _soft_close(state, vm, econ, ctx) -> Decision:
     state.status = Status.REJECTED
-    high_value = _is_high_value(vm, econ)
+    high_value = _is_high_value(vm, econ, ctx)
     note = " High-value creator, flag for follow-up." if high_value else ""
     return Decision(
         action=Action.SOFT_CLOSE, deal=None, ev=None,
@@ -398,10 +444,13 @@ def _soft_close(state, vm, econ, ctx) -> Decision:
 
 
 def _escalate_human(state, vm, econ, ctx, ask, *, extreme=False,
+                    reason: Optional[str] = None,
                     catalog: Optional[FormatCatalog] = None) -> Decision:
     state.status = Status.ESCALATED
     ask_str = f"${ask:,.0f}" if ask is not None else "their position"
-    if extreme:
+    if reason:
+        state.escalation_reason = reason
+    elif extreme:
         state.escalation_reason = (
             f"Ask {ask_str} is more than {ctx.extreme_ask_multiple:.0f}x what the "
             f"numbers support. A person should decide whether to walk or stretch.")
@@ -443,19 +492,39 @@ class DecisionContext:
     thread_last_sender: str = "creator"
     thread_last_ts: float = 0.0
     _willingness: Optional[float] = field(default=None, repr=False)
+    _ladder: Optional[PriceLadder] = field(default=None, repr=False)
 
     @property
     def ask(self) -> Optional[float]:
+        """The creator's ask as a total. Capturing the first ask normalizes it to
+        per-video, which is the unit every consumer (bundle anchoring, the
+        discount metric) reads it in."""
         a = self.msg.ask_total_usd
         if (a is not None and self.state.flat_offer_made
                 and self.state.creator_first_ask is None):
-            self.state.creator_first_ask = a
+            self.state.creator_first_ask = a / max(self.msg.ask_video_count or 1, 1)
         return a
 
     @property
+    def ask_per_video(self) -> Optional[float]:
+        """Their ask normalized per video, so a 3-video counter is judged against
+        per-video willingness instead of looking three times too high."""
+        a = self.ask
+        if a is None:
+            return None
+        return a / max(self.msg.ask_video_count or 1, 1)
+
+    @property
+    def ladder(self) -> PriceLadder:
+        if self._ladder is None:
+            self._ladder = _ladder(self.vm, self.econ, self.ctx)
+        return self._ladder
+
+    @property
     def willingness(self) -> float:
+        """Per-video, matched against ask_per_video."""
         if self._willingness is None:
-            self._willingness = _willingness_to_pay(
+            self._willingness = _willingness_per_video(
                 self.state, self.vm, self.econ, self.ctx)
         return self._willingness
 
@@ -489,9 +558,22 @@ def _accept_on_confirm(dctx: DecisionContext) -> Decision:
 def _question(dctx: DecisionContext) -> Decision:
     msg, state, ctx, brief = dctx.msg, dctx.state, dctx.ctx, dctx.brief
     topic = classify_question_topic(msg.raw_text)
-    if topic == "budget" and not state.flat_offer_made:
-        return _opening_flat(state, dctx.vm, dctx.econ, ctx,
-                             reason="asked about budget")
+    if topic == "budget":
+        if not state.flat_offer_made:
+            return _opening_flat(state, dctx.vm, dctx.econ, ctx,
+                                 reason="asked about budget")
+        # An offer is already on the table; a money question restates it
+        # rather than promising a new number.
+        return _hold_position(dctx)
+    if not can_answer(msg.raw_text, brief):
+        # A pure call request often reads as a question; a call answers it.
+        if msg.wants_call and not state.call_proposed:
+            return _propose_call(dctx)
+        return _ask_human(dctx,
+                          need=f"The creator asked something the brief does not "
+                               f"cover: \"{msg.raw_text.strip()}\". Reply with "
+                               f"the answer (or how to handle it) and I will "
+                               f"draft the response.")
     state.questions_answered += 1
     state.phase = Phase.QA
     # Conversation-aware: do not answer in place forever. Once several questions
@@ -500,7 +582,7 @@ def _question(dctx: DecisionContext) -> Decision:
     if not state.flat_offer_made and state.questions_answered >= ctx.qa_offer_after:
         return _opening_flat(state, dctx.vm, dctx.econ, ctx,
                              reason="several questions answered, time for a number")
-    answer = answer_from_brief(msg.raw_text, brief)
+    answer = answer_question(msg.raw_text, brief)
     nudge = forward_nudge(state.questions_answered, state.flat_offer_made)
     answer_text = f"{answer} {nudge}".strip() if nudge else answer
     return Decision(
@@ -521,13 +603,81 @@ def _open_or_soft_close(dctx: DecisionContext) -> Decision:
     return _opening_flat(state, dctx.vm, dctx.econ, dctx.ctx, reason=reason)
 
 
+def _ask_human(dctx: DecisionContext, need: str) -> Decision:
+    """The agent is missing context only the team has (a question outside the
+    brief, a reference to a call it was not on). Pause the thread and ask for
+    exactly what is needed; nothing goes to the creator until the team replies.
+    This is different from ESCALATE_HUMAN: the agent keeps the thread — it just
+    needs an input."""
+    dctx.state.notes.append(f"awaiting team input: {need}")
+    return Decision(
+        action=Action.ASK_HUMAN, deal=None, ev=None,
+        human_prompt=need,
+        rationale="Missing context only the team has. Pause and ask rather "
+                  "than guess; the thread stays with the agent.",
+        requires_approval=False)
+
+
+def _ask_human_call_context(dctx: DecisionContext) -> Decision:
+    return _ask_human(dctx,
+                      need=f"The creator referenced a call/conversation I was "
+                           f"not part of: \"{dctx.msg.raw_text.strip()[:300]}\". "
+                           f"What was discussed or agreed that I should know "
+                           f"before replying?")
+
+
+def _propose_call(dctx: DecisionContext) -> Decision:
+    """They want a call, and no counter is on the table to price. Get the call
+    scheduled — the agent proposes our windows and confirms, and a real person
+    runs the call. The team is flagged to own it from here."""
+    state, ctx = dctx.state, dctx.ctx
+    state.call_proposed = True
+    windows = ctx.call_windows or "a couple of slots later this week"
+    deal = (deal_from_dict(state.concession_history[-1].deal)
+            if state.concession_history else None)
+    ev = (_score_any(deal, dctx.vm, dctx.econ, catalog=dctx.catalog, seed=17)
+          if deal is not None else None)
+    return Decision(
+        action=Action.PROPOSE_CALL, deal=deal, ev=ev,
+        answer_text=windows,   # the availability the message should state
+        human_prompt="Creator is ready for an intro call. A teammate needs to "
+                     "send the invite and run the call (the agent cannot join); "
+                     "afterwards, note anything agreed back into this thread so "
+                     "the agent has the context.",
+        rationale=f"They want a call and there is no new number to price. "
+                  f"Propose {windows} and hand the call itself to a person — "
+                  f"a live conversation moves this deal better than another "
+                  f"email.",
+        requires_approval=_requires_approval(
+            Action.PROPOSE_CALL, deal.total_usd if deal else None, state, ctx))
+
+
+def _hold_position(dctx: DecisionContext) -> Decision:
+    """The creator followed up without a new number (a nudge, a 'still
+    interested', an unclear note). Restate the offer on the table and keep the
+    thread warm. Crucially, this costs no round and moves no money: a follow-up
+    is not a reason to bid against ourselves."""
+    state = dctx.state
+    last = state.concession_history[-1]
+    deal = deal_from_dict(last.deal)
+    ev = _score_any(deal, dctx.vm, dctx.econ, catalog=dctx.catalog, seed=13)
+    return Decision(
+        action=Action.HOLD_FIRM, deal=deal, ev=ev,
+        rationale=f"No new ask in their message. Hold ${deal.total_usd:,.0f} on "
+                  f"the table and keep the thread warm; concede nothing without "
+                  f"a counter.",
+        requires_approval=_requires_approval(Action.HOLD_FIRM, deal.total_usd,
+                                             state, dctx.ctx))
+
+
 def _revise_flat(dctx: DecisionContext) -> Decision:
     """The opening flat was rejected. Before restructuring into a bundle, make one
     revised single-video offer at the top of what the numbers allow: meet the
     creator up to our ROI ceiling. Only if this is rejected too do we move to a
     bundle, so we have tried hardest on the simplest deal first."""
     state, vm, econ, ctx = dctx.state, dctx.vm, dctx.econ, dctx.ctx
-    deal = flat_offer(_revised_flat_total(vm, econ, ctx, dctx.ask), video_count=1)
+    deal = flat_offer(_revised_flat_total(vm, econ, ctx, dctx.ask_per_video),
+                      video_count=1)
     ev = _score(deal, vm, econ, seed=6)
 
     state.flat_revised = True
@@ -536,7 +686,8 @@ def _revise_flat(dctx: DecisionContext) -> Decision:
     state.record_concession(deal_to_dict(deal), deal.total_usd, dctx.ask,
                             video_count=deal.video_count)
 
-    reserve = bundle_from_flat(deal)
+    reserve = bundle_from_flat(deal, target_videos=ctx.target_videos,
+                               bulk_discount=ctx.bundle_bulk_discount)
     reserve_ev = _score(reserve, vm, econ, seed=8)
     ask_str = f"${dctx.ask:,.0f}" if dctx.ask is not None else "the flat rate"
     return Decision(
@@ -555,13 +706,30 @@ def _revise_flat(dctx: DecisionContext) -> Decision:
 GUARDS = {
     "human_intervened": lambda d: d.state.human_intervened(
         d.thread_last_sender, d.thread_last_ts),
-    "creator_accepted": lambda d: d.msg.intent == Intent.ACCEPTED,
+    # A yes only locks terms when there are terms: with nothing on the table
+    # yet, an eager first message falls through to the opening branch instead.
+    "creator_accepted": lambda d: (d.msg.intent == Intent.ACCEPTED
+                                   and bool(d.state.concession_history)),
     "creator_asked": lambda d: d.msg.intent == Intent.QUESTION,
+    "contract_terms": lambda d: d.msg.contract_terms,
+    # A yes to terms we have on record can close; any other reference to a
+    # call the agent was not on (including a yes to unknown call-agreed terms)
+    # needs the team's context first.
+    "call_context_missing": lambda d: (
+        d.msg.refers_to_call and not (d.msg.intent == Intent.ACCEPTED
+                                      and d.state.concession_history)),
+    "wants_call": lambda d: (
+        d.msg.wants_call and d.ask is None and not d.state.call_proposed),
     "no_offer_yet": lambda d: not d.state.flat_offer_made,
+    "no_new_ask": lambda d: (
+        d.ask is None and d.msg.intent in (Intent.INTERESTED, Intent.UNCLEAR)
+        and bool(d.state.concession_history)),
     "ask_acceptable": lambda d: (
-        d.ask is not None and d.ask <= d.willingness * d.ctx.accept_margin),
+        d.ask_per_video is not None and
+        d.ask_per_video <= d.willingness * d.ctx.accept_margin),
     "ask_extreme": lambda d: (
-        d.ask is not None and d.ask > d.willingness * d.ctx.extreme_ask_multiple),
+        d.ask_per_video is not None and
+        d.ask_per_video > d.ladder.walk_away * d.ctx.extreme_ask_multiple),
     "out_of_rounds": lambda d: d.state.round_count >= d.state.max_rounds,
     "no_revision_yet": lambda d: (
         not d.state.flat_revised and not d.state.bundle_offered),
@@ -574,15 +742,23 @@ HANDLERS = {
     "accept_on_confirm": _accept_on_confirm,
     "answer_question": _question,
     "open_or_soft_close": _open_or_soft_close,
+    "ask_human_call_context": _ask_human_call_context,
+    "propose_call": _propose_call,
+    "hold_position": _hold_position,
     "revise_flat": _revise_flat,
     "accept_ask": lambda d: _accept_ask(
         d.msg, d.state, d.vm, d.econ, d.ctx, d.willingness),
     "escalate_human_extreme": lambda d: _escalate_human(
         d.state, d.vm, d.econ, d.ctx, d.ask, extreme=True, catalog=d.catalog),
+    "escalate_human_contract": lambda d: _escalate_human(
+        d.state, d.vm, d.econ, d.ctx, d.ask, catalog=d.catalog,
+        reason="They are negotiating contract terms (exclusivity, equity, kill "
+               "fee, or similar), not just price. A person should own changes "
+               "to the paper."),
     "escalate_human": lambda d: _escalate_human(
         d.state, d.vm, d.econ, d.ctx, d.ask, catalog=d.catalog),
     "escalate_bundle": lambda d: _escalate_bundle(
-        d.state, d.vm, d.econ, d.ctx, d.ask,
+        d.state, d.vm, d.econ, d.ctx, d.ask, d.ask_per_video,
         brief=d.brief, catalog=d.catalog, rate_card=d.rate_card),
     "sweeten_or_escalate": lambda d: _add_sweetener_or_escalate(
         d.state, d.vm, d.econ, d.ctx, d.ask, catalog=d.catalog),

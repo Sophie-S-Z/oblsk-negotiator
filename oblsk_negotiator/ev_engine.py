@@ -224,6 +224,9 @@ def fit_view_model(
     min_posts: int = 6,
     prior_samples: Optional[np.ndarray] = None,
     tier_median: Optional[float] = None,
+    timestamps: Optional[list[float]] = None,
+    half_life_days: float = 90.0,
+    sponsored_factor: float = 1.0,
 ) -> ViewModel:
     """Fit a samplable view model to a creator's recent per-video views.
 
@@ -231,9 +234,26 @@ def fit_view_model(
     Pareto tail when the tail is heavier than log-normal allows (positive excess
     kurtosis in log space, alpha from a Hill estimate). With too little history,
     fall back to a tier prior scaled to whatever real posts exist.
+
+    `timestamps` (epoch seconds, aligned with post_views) turns on recency
+    weighting with the given half-life, so a rising creator is not dragged down
+    by old posts. `sponsored_factor` is the organic->sponsored haircut: paid
+    posts under-deliver organic history, so views are scaled by it before the
+    fit (0.8 is the calculator's default; 1.0 leaves history untouched).
     """
-    v = np.asarray([x for x in post_views if x is not None and x > 0], dtype=float)
+    paired = [(x, timestamps[i] if timestamps is not None else None)
+              for i, x in enumerate(post_views) if x is not None and x > 0]
+    v = np.asarray([x for x, _ in paired], dtype=float) * float(sponsored_factor)
     n = len(v)
+
+    weights = None
+    if timestamps is not None and n > 0:
+        ts = np.asarray([t if t else 0.0 for _, t in paired], dtype=float)
+        known = ts[ts > 0]
+        if len(known) >= max(3, n * 0.5):
+            newest = float(known.max())
+            age_days = np.where(ts > 0, np.maximum(0.0, (newest - ts) / 86400.0), 0.0)
+            weights = np.power(0.5, age_days / float(half_life_days))
 
     if n < min_posts:
         if prior_samples is not None and len(prior_samples) > 0:
@@ -260,8 +280,18 @@ def fit_view_model(
             notes=f"thin data ({n} posts), inflated sigma, no prior")
 
     log_v = np.log(v)
-    mu = float(log_v.mean())
-    sigma = float(log_v.std(ddof=1))
+    if weights is not None:
+        w = weights / weights.sum()
+        mu = float(np.sum(w * log_v))
+        var = float(np.sum(w * (log_v - mu) ** 2)) * n / max(n - 1, 1)
+        sigma = float(np.sqrt(var))
+        wnote = f", recency-weighted ({half_life_days:.0f}d half-life)"
+    else:
+        mu = float(log_v.mean())
+        sigma = float(log_v.std(ddof=1))
+        wnote = ""
+    if sponsored_factor != 1.0:
+        wnote += f", sponsored haircut x{sponsored_factor:.2f}"
     log_kurt = float(stats.kurtosis(log_v, fisher=True, bias=False)) if n >= 4 else 0.0
 
     if log_kurt > 1.0 and n >= 10:
@@ -276,12 +306,12 @@ def fit_view_model(
                         "x_min": x_min, "tail_frac": tail_frac},
                 n_posts_fit=n, median_views=float(np.exp(mu)),
                 notes=f"lognormal body + Pareto tail (alpha={alpha:.2f}, "
-                      f"x_min={x_min:.0f}, tail_frac={tail_frac:.2f})")
+                      f"x_min={x_min:.0f}, tail_frac={tail_frac:.2f}){wnote}")
 
     return ViewModel(
         family="lognormal", params={"mu": mu, "sigma": sigma},
         n_posts_fit=n, median_views=float(np.exp(mu)),
-        notes=f"lognormal MLE (log-kurtosis={log_kurt:.2f})")
+        notes=f"lognormal MLE (log-kurtosis={log_kurt:.2f}){wnote}")
 
 
 @dataclass
