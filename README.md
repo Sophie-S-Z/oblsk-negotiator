@@ -18,6 +18,16 @@ The negotiator opens at the anchor, revises once toward the target when the crea
 
 The conversation itself is a behavior tree: one pass per message, top to bottom, first branch that fits wins. A follow-up with no counter gets the standing offer restated, never an unforced concession; a message negotiating contract terms (exclusivity compensation, equity structure, kill fees) goes straight to a person — the agent never negotiates paper. The branch order lives in `tree_spec.yaml`, and every number the negotiator uses lives in the campaign config, so a campaign tunes its stance (ROI targets, anchor aggressiveness, bundle size, approval ceilings) in a YAML file, not code. Every outbound message waits for a human approval until autonomy is switched on.
 
+## Using it from the Oblsk platform
+
+The platform (rockcorp/oblsk) already polls Gmail threads, classifies messages, and runs the review UI — what it asks a negotiator for is the next reply. This agent serves exactly that as HTTP:
+
+```bash
+py -m oblsk_negotiator.service --campaign examples/unest_campaign.yaml --port 8788
+```
+
+`POST /suggest` takes the platform's `NegotiatorInput` shape (the thread's messages, `medianViewsPerVideo`, `recentPostViews`) and returns its `NegotiatorSuggestion` shape (drafted message, strategy, debug numbers) plus an `agent` block with the precise action, the ladder, `requiresApproval`, and any `humanPrompt`. The service is stateless — state is derived from the thread itself, so offers a *person* made in the thread count as the agent's positions and it picks up mid-flight without re-opening at the anchor. Wiring details, the Convex `fetch` snippet, and the response contract: [docs/INTEGRATION.md](docs/INTEGRATION.md).
+
 ## Humans stay in the loop
 
 Beyond per-message approvals, the agent knows what it cannot do and asks:
@@ -79,6 +89,7 @@ oblsk_negotiator/      the package
   qa.py                answers questions from the campaign brief (LLM-first)
   prose.py             turns a decision into one human message (LLM-first)
   llm.py               the one wrapper around the Anthropic SDK, with offline fallback
+  service.py           HTTP /suggest service the Oblsk platform calls (stateless)
   campaign.py          one YAML per campaign: brief, economics, stance, aliases
   replay.py            shadow-run the agent over real chat/email threads
   spar.py              Claude plays the creator's manager; agent negotiates back
@@ -86,7 +97,7 @@ oblsk_negotiator/      the package
   events.py            the same thread as an append-only event log
   creator_sim.py       a parameterized simulated creator for closed-loop testing
   runner.py            the loop, the approval gate, the metrics
-tests/                 50 checks, all offline
+tests/                 60 checks, all offline
 examples/              campaign config + real and sample threads for replay
 docs/                  AGENT_GUIDE.pdf (how to use it) + CALCULATOR.md (the pricing model)
 figures/               architecture and behavior-tree diagrams
@@ -99,7 +110,7 @@ The pricing ladder, recency weighting, sponsored haircut, authenticity heuristic
 ```bash
 pip install -r requirements.txt
 pip install anthropic                    # optional: enables the LLM path
-python -m pytest                         # 50 checks, offline
+python -m pytest                         # 60 checks, offline
 
 py demo.py                               # one simulated negotiation
 py demo.py --floor 2800 --opens ask      # a harder creator

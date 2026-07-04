@@ -51,7 +51,8 @@ _TOPIC_KEYWORDS = {
                          "talking point", "guideline"],
     "product": ["product", "brand", "who is", "what is", "about the", "company"],
     "budget": ["budget", "rate", "how much", "pay me", "fee", "price", "cost",
-               "does this pay"],
+               "does this pay", "have in mind", "what were you thinking",
+               "what are you thinking"],
 }
 
 

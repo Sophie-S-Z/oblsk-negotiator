@@ -693,12 +693,28 @@ def _revise_flat(dctx: DecisionContext) -> Decision:
     return Decision(
         action=Action.OPENING_FLAT, deal=deal, ev=ev,
         rationale=f"Flat rejected ({ask_str}). Hold the single video but revise up "
-                  f"to ${deal.total_usd:,.0f}, the most the ROI hurdle allows "
-                  f"({ev.roi_mean:.1f}x). If rejected again, restructure into a "
-                  f"bundle.",
+                  f"to ${deal.total_usd:,.0f} — our target rung (ROI "
+                  f"{ev.roi_mean:.1f}x); the walk-away ceiling is never offered. "
+                  f"If rejected again, restructure into a bundle.",
         reserve_deal=reserve, reserve_ev=reserve_ev,
         requires_approval=_requires_approval(Action.OPENING_FLAT, deal.total_usd,
                                              state, ctx))
+
+
+def _accept_threshold_per_video(d: DecisionContext) -> float:
+    """The most per video we will accept right now: willingness plus the
+    thin-gap margin, hard-capped at the walk-away. The margin exists to close
+    small gaps below the ceiling — it never crosses it (paying above the
+    walk-away means an ordinary p10 underperformance loses money). The one
+    exception is a composed multi-format bundle on the table: it prices off
+    each format's own reach, so its blended rate is its own cap and the
+    single-format ladder does not apply."""
+    threshold = d.willingness * d.ctx.accept_margin
+    state = d.state
+    if (state.bundle_offered and state.concession_history and
+            isinstance(deal_from_dict(state.concession_history[-1].deal), Bundle)):
+        return threshold
+    return min(threshold, d.ladder.walk_away)
 
 
 # ---- registries: names the spec resolves against ---------------------------
@@ -726,7 +742,7 @@ GUARDS = {
         and bool(d.state.concession_history)),
     "ask_acceptable": lambda d: (
         d.ask_per_video is not None and
-        d.ask_per_video <= d.willingness * d.ctx.accept_margin),
+        d.ask_per_video <= _accept_threshold_per_video(d)),
     "ask_extreme": lambda d: (
         d.ask_per_video is not None and
         d.ask_per_video > d.ladder.walk_away * d.ctx.extreme_ask_multiple),

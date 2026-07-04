@@ -132,7 +132,7 @@ pdf.h2("Setup")
 pdf.code("pip install -r requirements.txt",
          "pip install anthropic          # optional, enables the LLM",
          "set ANTHROPIC_API_KEY=...      # optional; omit to run offline",
-         "python -m pytest               # 53 checks, all offline")
+         "python -m pytest               # 60 checks, all offline")
 pdf.p("Without a key everything still runs: messages come from fixed "
       "templates and incoming text is read by keyword rules. With a key, "
       "Claude drafts each message from the live thread and reads real-world "
@@ -205,6 +205,29 @@ pdf.item("escalate_human.", "Extreme asks, exhausted rounds, and any "
 pdf.item("hold_firm.", "Not a handoff, but worth knowing: a follow-up with "
          "no counter gets the standing offer restated. The agent never bids "
          "against itself.")
+
+pdf.h2("Plugging into the Oblsk platform")
+pdf.p("The platform already polls Gmail threads, classifies messages, and "
+      "runs the review UI. The agent plugs in as an HTTP service that "
+      "suggests the next reply:")
+pdf.code("py -m oblsk_negotiator.service --campaign examples/unest_campaign.yaml "
+         "--port 8788")
+pdf.p("POST /suggest takes the thread and the creator's view numbers; the "
+      "response has the drafted message, the move, the ladder, whether it "
+      "needs approval, and any task for a human. The service is stateless: "
+      "state is derived from the thread itself, so offers a person made count "
+      "as the agent's positions and it picks threads up mid-flight. Wiring "
+      "details and the exact request/response shapes: docs/INTEGRATION.md.")
+
+pdf.h2("Walk-away vs. a creator's floor")
+pdf.p("Walk-away is OUR ceiling, computed from the numbers: above it, an "
+      "ordinary bottom-10% outcome loses money. A creator's floor is THEIR "
+      "private minimum - the agent never sees it. In demos, the 'sim "
+      "creator's hidden floor' line is a parameter of the fake counterpart, "
+      "shown so you can judge the run; real threads have no such input. When "
+      "target and walk-away print as the same number, the creator's views are "
+      "so volatile that the fee hitting the ROI goal would lose money on a "
+      "bad outcome - the ceiling clamps the target, and the printout says so.")
 
 pdf.h2("Environment variables")
 pdf.item("ANTHROPIC_API_KEY", "- enables the LLM (drafting, reading, sparring).")

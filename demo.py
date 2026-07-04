@@ -119,8 +119,11 @@ def run_one(args, camp: Campaign) -> None:
 
     print(f"view model: {vm.notes}")
     print(f"ladder:     {price_ladder(vm, camp.econ, camp.ctx.pricing_policy()).summary()}")
-    print(f"creator floor ${args.floor:,.0f}/video  |  autonomy: {autonomy.value}  "
-          f"|  max rounds: {args.rounds}\n")
+    # The floor is the SIMULATED creator's private minimum — a test-harness
+    # parameter for the fake counterpart, hidden from the agent. Our side's
+    # ceiling is the ladder's walk-away above.
+    print(f"sim creator's hidden floor ${args.floor:,.0f}/video  |  "
+          f"autonomy: {autonomy.value}  |  max rounds: {args.rounds}\n")
 
     o = run_negotiation(
         vm, camp.econ, camp.ctx, make_creator(args, args.seed),
@@ -140,7 +143,7 @@ def run_many(args, camp: Campaign) -> None:
         vm = view_model(rng)
         creator, name = random_creator(rng, vm, camp)
         header = (f"negotiation {i}/{args.count}  |  {name}  |  "
-                  f"floor ${creator.reservation_per_video:,.0f}/video")
+                  f"sim hidden floor ${creator.reservation_per_video:,.0f}/video")
         print("\n" + "=" * len(header))
         print(header)
         print("=" * len(header))

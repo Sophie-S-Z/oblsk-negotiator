@@ -14,7 +14,7 @@ prices — where to open, where to aim, and the ceiling we never cross.**
 
 ---
 
-## 1. The delivery estimate (and why the old one was wrong)
+## 1. The delivery estimate (and iterations on the old model)
 
 The old model took the **median** of a creator's recent view counts and called
 that the expected delivery. Two failure modes:

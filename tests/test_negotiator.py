@@ -158,6 +158,32 @@ def test_extreme_ask_escalates_to_human():
     assert d.action == Action.ESCALATE_HUMAN and "x what" in d.rationale
 
 
+def test_accept_never_crosses_walk_away():
+    # Regression (screenshot bug): an ask above the walk-away ceiling but
+    # inside willingness*accept_margin was accepted ($2,450 over a $2,372
+    # ceiling). The margin closes thin gaps below the ceiling; it never
+    # crosses it — at any rung of the ladder.
+    from oblsk_negotiator.behavior_tree import _max_pay_per_video
+    s = NegotiationState("c", "k", "t")
+    walk = _max_pay_per_video(VM, ECON, CTX)
+    decide(CreatorMessage(Intent.INTERESTED), s, VM, ECON, CTX)          # open
+    over = walk * 1.03    # above the ceiling, within the old margin window
+    d1 = decide(CreatorMessage(Intent.NEGOTIATING, ask_total_usd=over),
+                s, VM, ECON, CTX)
+    assert d1.action != Action.ACCEPT                                    # revise
+    d2 = decide(CreatorMessage(Intent.NEGOTIATING, ask_total_usd=over),
+                s, VM, ECON, CTX)
+    assert d2.action != Action.ACCEPT                                    # bundle
+    if d2.deal is not None:   # any offer we do make stays under the ceiling
+        assert d2.deal.total_usd / d2.deal.video_count <= walk * 1.01
+    # And an ask genuinely under the ceiling still closes.
+    s2 = NegotiationState("c", "k", "t2")
+    decide(CreatorMessage(Intent.INTERESTED), s2, VM, ECON, CTX)
+    ok = decide(CreatorMessage(Intent.NEGOTIATING, ask_total_usd=walk * 0.95),
+                s2, VM, ECON, CTX)
+    assert ok.action == Action.ACCEPT
+
+
 def test_ladder_orders_and_reproduces():
     lad = price_ladder(VM, ECON, CTX.pricing_policy())
     assert 0 < lad.anchor <= lad.target <= lad.walk_away

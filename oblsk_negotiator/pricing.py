@@ -81,12 +81,23 @@ class PriceLadder:
         return {"down": self.value_down / fee, "exp": self.value_exp / fee,
                 "up": self.value_up / fee}
 
+    @property
+    def downside_limited(self) -> bool:
+        """True when the fee that would hit the ROI goal exceeds what the p10
+        downside supports, so the target is clamped to the walk-away. Common
+        for very heavy-tailed creators: the expectation (tail-driven) is huge
+        relative to a typical bad outcome."""
+        return self.target >= self.walk_away - 1e-9
+
     def summary(self) -> str:
         r = self.roi_at(self.target)
+        note = ("  [downside-limited: the ROI-goal fee exceeds what a p10 "
+                "outcome supports, so target = walk-away]"
+                if self.downside_limited else "")
         return (f"anchor ${self.anchor:,.0f}  target ${self.target:,.0f}  "
                 f"walk-away ${self.walk_away:,.0f}  "
                 f"(ROI at target: {r['down']:.1f}x down / {r['exp']:.1f}x exp / "
-                f"{r['up']:.1f}x up; ceiling set by {self.binding})")
+                f"{r['up']:.1f}x up; ceiling set by {self.binding}){note}")
 
 
 def price_ladder(vm: ViewModel,
