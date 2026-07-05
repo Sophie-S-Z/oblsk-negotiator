@@ -12,6 +12,33 @@ This agent is that call, as an HTTP service. Same input shape, same output
 shape, so the swap is one `fetch` inside the existing Convex node action — no
 schema changes, no new tables, and humans keep the same review UI.
 
+## How it works once integrated (the whole loop)
+
+For each creator, once per inbound message:
+
+1. **A creator emails back.** The platform's Gmail poller adds the message to
+   the `negotiationConversation` thread (this already happens today).
+2. **The platform calls the agent** with the thread so far plus the creator's
+   view numbers — `POST /suggest` (one `fetch`, replacing the current
+   `generateNegotiatorSuggestion` call).
+3. **The agent reads, prices, and drafts.** It interprets the latest message
+   (intent + any dollar ask), prices the next move off the ladder (open at the
+   anchor, revise to target, never cross walk-away — all from the calculator),
+   and drafts the reply. It returns the message, the move, and whether a human
+   needs to approve or act.
+4. **The platform shows it in the review UI** (also already built). A teammate
+   approves → the existing sender emails it. Or the agent flagged
+   `requiresApproval: false` and it auto-sends, within the campaign's dollar
+   ceiling.
+5. **Repeat** until the agent's move is `accept` (deal closed), `escalate`
+   (handed to a person), or it asks a human for something it can't answer.
+
+The agent holds no state of its own — the Gmail thread is the record. That is
+why a person can jump into a thread at any point and the agent picks right back
+up (see §3). To watch this loop by hand before wiring it in, run
+`py demo.py --chat`: you type the creator's messages, the agent runs the exact
+same read → price → draft it runs in step 3.
+
 ## 1. Run the service
 
 ```bash

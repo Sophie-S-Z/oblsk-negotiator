@@ -132,7 +132,7 @@ pdf.h2("Setup")
 pdf.code("pip install -r requirements.txt",
          "pip install anthropic          # optional, enables the LLM",
          "set ANTHROPIC_API_KEY=...      # optional; omit to run offline",
-         "python -m pytest               # 60 checks, all offline")
+         "python -m pytest               # 67 checks, all offline")
 pdf.p("Without a key everything still runs: messages come from fixed "
       "templates and incoming text is read by keyword rules. With a key, "
       "Claude drafts each message from the live thread and reads real-world "
@@ -155,10 +155,21 @@ pdf.item("us_aliases:", "names, emails, or domains that identify your side "
          "of an email thread, so replay knows who is who.")
 
 pdf.add_page()
-pdf.h2("Four ways to run it")
+pdf.h2("Ways to run it")
+pdf.item("Talk to it yourself.", "You type as the creator, the agent replies "
+         "live. This is the exact read-price-draft the platform runs on real "
+         "Gmail threads - here you type the messages. The fastest way to see "
+         "it is a real agent, not a canned demo.")
+pdf.code("py demo.py --chat",
+         "py demo.py --chat --campaign examples/unest_campaign.yaml --median 150000")
+pdf.item("See the calculation.", "Print the plain-English derivation of the "
+         "three prices - reach, then dollars, then the ladder - so no number "
+         "is a black box.")
+pdf.code("py demo.py --explain")
 pdf.item("Simulate.", "A rule-based creator plays the other side; you watch "
-         "the full negotiation with approvals and the reasoning for each move.")
-pdf.code("py demo.py",
+         "the full negotiation with approvals and the reasoning for each move. "
+         "--random gives a fresh creator every run.")
+pdf.code("py demo.py --random",
          "py demo.py --floor 2800 --opens ask --ask 3500",
          "py demo.py --campaign examples/unest_campaign.yaml --count 20 --quiet")
 pdf.item("Replay a real thread.", "Paste a Gmail thread into a text file "

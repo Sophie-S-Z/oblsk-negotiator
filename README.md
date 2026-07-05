@@ -97,7 +97,7 @@ oblsk_negotiator/      the package
   events.py            the same thread as an append-only event log
   creator_sim.py       a parameterized simulated creator for closed-loop testing
   runner.py            the loop, the approval gate, the metrics
-tests/                 60 checks, all offline
+tests/                 67 checks, all offline
 examples/              campaign config + real and sample threads for replay
 docs/                  AGENT_GUIDE.pdf (how to use it) + CALCULATOR.md (the pricing model)
 figures/               architecture and behavior-tree diagrams
@@ -110,12 +110,29 @@ The pricing ladder, recency weighting, sponsored haircut, authenticity heuristic
 ```bash
 pip install -r requirements.txt
 pip install anthropic                    # optional: enables the LLM path
-python -m pytest                         # 60 checks, offline
+python -m pytest                         # 67 checks, offline
+```
 
-py demo.py                               # one simulated negotiation
-py demo.py --floor 2800 --opens ask      # a harder creator
+**Talk to it yourself** — you play the creator, the agent replies live. This is the exact read → price → draft the platform runs on real Gmail threads; here you type the messages:
+
+```bash
+py demo.py --chat                        # type a message, get a real reply
+py demo.py --chat --campaign examples/unest_campaign.yaml --median 150000
+```
+
+**See the calculation**, in plain English (reach → dollars → the three prices):
+
+```bash
+py demo.py --explain                     # print the derivation, then a run
+```
+
+**Watch full negotiations** — a fresh random creator each run, or a sweep:
+
+```bash
+py demo.py --random                      # a new creator + full transcript every run
+py demo.py --floor 2800 --opens ask      # a specific harder creator
 py demo.py --count 20 --quiet            # 20 varied runs + aggregate metrics
 py demo.py --campaign examples/unest_campaign.yaml --replay examples/unest_thread.txt
 ```
 
-The notebook in `notebooks/` walks the same ground interactively: the pricing thesis and the ladder, a live negotiation with approvals, the real-thread replay, and the metrics sweep.
+The notebook in `notebooks/` walks the same ground interactively. To run it in Google Colab against this private repo, see [docs/COLAB_SETUP.md](docs/COLAB_SETUP.md) (add a `GITHUB_TOKEN` secret — two minutes).
