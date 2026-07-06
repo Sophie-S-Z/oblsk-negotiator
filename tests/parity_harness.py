@@ -105,13 +105,16 @@ def _targeted_scenarios():
         {"name": "qa_threshold",
          "msgs": [_q("what are the deliverables?"), _q("timeline?"),
                   _q("usage rights?")]},
-        # flat rejected -> revised flat -> bundle -> escalate (default 3 rounds)
+        # flat rejected -> revised flat; high counters -> bundle -> escalate
         {"name": "flat_revise_bundle",
-         "msgs": [_interested(), _rejecting(), _rejecting(), _rejecting()]},
+         "msgs": [_interested(), _rejecting(), _ask(4000), _ask(4000)]},
         # full ladder incl. sweetener, needs a higher round budget than the default
         {"name": "sweetener_ladder", "max_rounds": 5,
-         "msgs": [_interested(), _rejecting(), _rejecting(), _rejecting(),
-                  _rejecting()]},
+         "msgs": [_interested(), _rejecting(), _ask(4000), _ask(4000),
+                  _ask(4000)]},
+        # two straight rejections with no counter -> one salvage, then soft close
+        {"name": "reject_twice_soft_close",
+         "msgs": [_interested(), _rejecting(), _rejecting()]},
         # low counter accepted
         {"name": "accept_low_counter", "msgs": [_interested(), _ask(1500)]},
         # extreme ask -> escalate human

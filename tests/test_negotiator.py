@@ -133,19 +133,49 @@ def test_opening_is_single_flat():
 
 
 def test_flat_rejected_revises_then_bundles():
-    # First rejection gets one revised single-video flat at our ROI ceiling; only
-    # a second rejection moves to a bundle.
+    # First rejection gets one revised single-video flat at our ROI ceiling; a
+    # counter still above it moves to a bundle.
     s = NegotiationState("c", "k", "t")
     d0 = decide(CreatorMessage(Intent.INTERESTED), s, VM, ECON, CTX)
     d1 = decide(CreatorMessage(Intent.REJECTING, raw_text="too low"), s, VM, ECON, CTX)
     assert d1.action == Action.OPENING_FLAT and d1.deal.video_count == 1
     assert s.flat_revised and not s.bundle_offered
     assert d1.deal.total_usd >= d0.deal.total_usd            # a real concession up
-    assert d1.deal.total_usd <= _max_pay_per_video(VM, ECON, CTX) + 50  # still ROI-capped
-    d2 = decide(CreatorMessage(Intent.REJECTING, raw_text="still too low"),
-                s, VM, ECON, CTX)
+    assert d1.deal.total_usd <= _max_pay_per_video(VM, ECON, CTX)  # still ROI-capped
+    high = _max_pay_per_video(VM, ECON, CTX) * 1.5           # too high, not extreme
+    d2 = decide(CreatorMessage(Intent.NEGOTIATING, ask_total_usd=high,
+                               raw_text="I really need more"), s, VM, ECON, CTX)
     assert d2.action == Action.ESCALATE_BUNDLE and d2.deal.video_count > 1
     assert s.bundle_offered
+
+
+def test_second_straight_rejection_soft_closes():
+    # One salvage attempt after a rejection with no counter; a second straight
+    # rejection closes gently instead of pushing a bundle at someone who is done.
+    from oblsk_negotiator.state import Status
+    s = NegotiationState("c", "k", "t")
+    decide(CreatorMessage(Intent.INTERESTED), s, VM, ECON, CTX)
+    d1 = decide(CreatorMessage(Intent.REJECTING, raw_text="not interested"),
+                s, VM, ECON, CTX)
+    assert d1.action == Action.OPENING_FLAT                  # the one salvage
+    d2 = decide(CreatorMessage(Intent.REJECTING, raw_text="again: not interested"),
+                s, VM, ECON, CTX)
+    assert d2.action == Action.SOFT_CLOSE and s.status == Status.REJECTED
+    # A counter in between resets the streak.
+    s2 = NegotiationState("c", "k", "t2")
+    decide(CreatorMessage(Intent.INTERESTED), s2, VM, ECON, CTX)
+    decide(CreatorMessage(Intent.REJECTING, raw_text="too low"), s2, VM, ECON, CTX)
+    decide(CreatorMessage(Intent.NEGOTIATING, ask_total_usd=4000), s2, VM, ECON, CTX)
+    assert s2.consecutive_rejections == 0
+
+
+def test_rounding_never_crosses_walk_away():
+    # Rounding to clean numbers floors at the ceiling instead of crossing it.
+    from oblsk_negotiator.behavior_tree import _revised_flat_total, _bundle_total
+    walk = _max_pay_per_video(VM, ECON, CTX)
+    assert _revised_flat_total(VM, ECON, CTX) <= walk
+    assert _bundle_total(VM, ECON, CTX, ask_per_video=walk * 1.9) / CTX.target_videos \
+        <= walk
 
 
 def test_extreme_ask_escalates_to_human():

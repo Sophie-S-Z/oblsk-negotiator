@@ -58,8 +58,10 @@ def _deal_phrase(d) -> str:
         return _bundle_phrase(d)
     if d.video_count == 1:
         return f"{_money(d.flat_per_video)} for the video"
+    per = d.flat_per_video
+    approx = "" if abs(per * d.video_count - d.total_usd) < 0.5 else "about "
     return (f"{_money(d.total_usd)} total for {d.video_count} videos "
-            f"({_money(d.flat_per_video)} each)")
+            f"({approx}{_money(per)} each)")
 
 
 def render_template(decision: Decision, creator_name: str = "there",

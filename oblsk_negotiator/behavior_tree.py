@@ -17,6 +17,7 @@ Order of branches (see tree_spec.yaml for the source of truth):
   wants a call, no counter    -> propose call windows, a human runs the call
   no offer yet                -> open with one flat number (the anchor)
   follow-up with no counter   -> hold the standing offer, concede nothing
+  rejected twice, no counter  -> close gently, keep the door open
   their ask is fine for us    -> accept
   their ask is wildly high    -> escalate to a person
   out of rounds               -> escalate to a person
@@ -88,7 +89,8 @@ class CampaignContext:
     accept_margin: float = 1.05                # accept asks within this of our max
     extreme_ask_multiple: float = 2.0          # asks above this multiple of the
                                                # walk-away ceiling go to a person
-    qa_offer_after: int = 3                    # answered questions before we open an offer
+    qa_offer_after: int = 3                    # the Nth money-free question gets an
+                                               # offer instead of another answer
     target_videos: int = 3                     # videos in the single-format bundle
     bundle_bulk_discount: float = 0.10         # per-video discount for committing to several
     ask_bulk_discount: float = 0.05            # lighter discount when anchored to their ask
@@ -165,6 +167,13 @@ def _round_money(x: float, step: float = 50.0) -> float:
     return float(round(x / step) * step)
 
 
+def _round_money_capped(x: float, step: float, cap: float) -> float:
+    """Round to a clean number, but never let the rounding itself carry the
+    offer above `cap` (the walk-away): floor to the step instead."""
+    r = _round_money(x, step)
+    return r if r <= cap else float(int(cap / step) * step)
+
+
 def _ladder(vm: ViewModel, econ: CreatorEconomics,
             ctx: CampaignContext) -> PriceLadder:
     """The single-video ladder for this creator under this campaign's policy."""
@@ -174,7 +183,8 @@ def _ladder(vm: ViewModel, econ: CreatorEconomics,
 
 def _flat_total(vm, econ, ctx) -> float:
     """The opening flat: the ladder's anchor, rounded to a clean number."""
-    return _round_money(_ladder(vm, econ, ctx).anchor, ctx.money_step)
+    lad = _ladder(vm, econ, ctx)
+    return _round_money_capped(lad.anchor, ctx.money_step, lad.walk_away)
 
 
 def _max_pay_per_video(vm, econ, ctx) -> float:
@@ -191,7 +201,8 @@ def _revised_flat_total(vm, econ, ctx, ask_per_video: Optional[float] = None) ->
     never offered proactively."""
     lad = _ladder(vm, econ, ctx)
     up_to = lad.target if not ask_per_video else min(lad.target, ask_per_video)
-    return max(_round_money(up_to, ctx.money_step), _flat_total(vm, econ, ctx))
+    return max(_round_money_capped(up_to, ctx.money_step, lad.walk_away),
+               _flat_total(vm, econ, ctx))
 
 
 def _bundle_per_video(vm, econ, ctx, ask_per_video: Optional[float] = None) -> float:
@@ -211,7 +222,8 @@ def _bundle_total(vm, econ, ctx, ask_per_video: Optional[float] = None,
                   target_videos: Optional[int] = None) -> float:
     videos = target_videos or ctx.target_videos
     per_video = _bundle_per_video(vm, econ, ctx, ask_per_video)
-    return _round_money(per_video * videos, ctx.bundle_money_step)
+    return _round_money_capped(per_video * videos, ctx.bundle_money_step,
+                               _ladder(vm, econ, ctx).walk_away * videos)
 
 
 def _willingness_per_video(state, vm, econ, ctx) -> float:
@@ -277,6 +289,9 @@ def decide(msg: CreatorMessage,
     flat-plus-videos bundle.
     """
     brief = brief or CampaignBrief()
+    state.consecutive_rejections = (
+        state.consecutive_rejections + 1
+        if msg.intent == Intent.REJECTING else 0)
     dctx = DecisionContext(
         msg=msg, state=state, vm=vm, econ=econ, ctx=ctx, brief=brief,
         catalog=catalog, rate_card=rate_card,
@@ -336,8 +351,7 @@ def _escalate_bundle(state, vm, econ, ctx, ask, ask_per_video=None, *,
     # per-video rate. Hold that rate near their ask and add videos: each one is an
     # independent draw, so the total return scales while the rate stays fair.
     target_videos = ctx.target_videos
-    per_video = _bundle_per_video(vm, econ, ctx, ask_per_video=ask_per_video)
-    total = _round_money(per_video * target_videos, ctx.bundle_money_step)
+    total = _bundle_total(vm, econ, ctx, ask_per_video, target_videos)
     bundle = Deal(video_count=target_videos, flat_per_video=total / target_videos)
     ev = _score(bundle, vm, econ, seed=7)
 
@@ -500,6 +514,16 @@ class DecisionContext:
     _willingness: Optional[float] = field(default=None, repr=False)
     _ladder: Optional[PriceLadder] = field(default=None, repr=False)
 
+    def _ask_videos(self) -> int:
+        """The video count an ask covers: the stated count, else the count of
+        the offer on the table (a bare number countering a 3-video package
+        reads as a package total, not a per-video rate), else 1."""
+        if self.msg.ask_video_count:
+            return max(self.msg.ask_video_count, 1)
+        if self.state.concession_history:
+            return max(self.state.concession_history[-1].offered_video_count, 1)
+        return 1
+
     @property
     def ask(self) -> Optional[float]:
         """The creator's ask as a total. Capturing the first ask normalizes it to
@@ -508,7 +532,7 @@ class DecisionContext:
         a = self.msg.ask_total_usd
         if (a is not None and self.state.flat_offer_made
                 and self.state.creator_first_ask is None):
-            self.state.creator_first_ask = a / max(self.msg.ask_video_count or 1, 1)
+            self.state.creator_first_ask = a / self._ask_videos()
         return a
 
     @property
@@ -518,7 +542,7 @@ class DecisionContext:
         a = self.ask
         if a is None:
             return None
-        return a / max(self.msg.ask_video_count or 1, 1)
+        return a / self._ask_videos()
 
     @property
     def ladder(self) -> PriceLadder:
@@ -746,6 +770,11 @@ GUARDS = {
     "no_new_ask": lambda d: (
         d.ask is None and d.msg.intent in (Intent.INTERESTED, Intent.UNCLEAR)
         and bool(d.state.concession_history)),
+    # A first rejection with no counter gets one salvage attempt (revise or
+    # bundle below); a second straight one means they are done — stop pitching.
+    "rejected_again": lambda d: (
+        d.msg.intent == Intent.REJECTING and d.ask is None
+        and d.state.consecutive_rejections >= 2),
     "ask_acceptable": lambda d: (
         d.ask_per_video is not None and
         d.ask_per_video <= _accept_threshold_per_video(d)),
@@ -767,6 +796,7 @@ HANDLERS = {
     "ask_human_call_context": _ask_human_call_context,
     "propose_call": _propose_call,
     "hold_position": _hold_position,
+    "soft_close": lambda d: _soft_close(d.state, d.vm, d.econ, d.ctx),
     "revise_flat": _revise_flat,
     "accept_ask": lambda d: _accept_ask(
         d.msg, d.state, d.vm, d.econ, d.ctx, _accept_threshold_per_video(d)),

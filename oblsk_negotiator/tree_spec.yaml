@@ -28,6 +28,8 @@
   handler: open_or_soft_close
 - guard: no_new_ask                # a follow-up with no counter: hold, don't concede
   handler: hold_position
+- guard: rejected_again            # second straight rejection, no counter: stop pitching
+  handler: soft_close
 - guard: ask_acceptable            # their ask is at or below our max
   handler: accept_ask
 - guard: ask_extreme               # their ask is wildly above what the numbers support

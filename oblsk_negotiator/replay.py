@@ -232,6 +232,23 @@ _REFERS_CALL_RE = re.compile(
 
 _MONEY_RE = re.compile(r"\$\s*([\d][\d,]*(?:\.\d{1,2})?)\s*([kK])?"
                        r"|(?<![\w$.])([\d]+(?:\.\d)?)\s*[kK]\b")
+# A dollar amount explicitly marked as the package total ("$7,000 total",
+# "$7,500 for the 3 videos", "$8,000 for the package"). Our own bundle messages
+# carry both a total and a per-video rate, so the total marker must win.
+_TOTAL_MONEY_RE = re.compile(
+    r"\$\s*([\d,]+(?:\.\d{1,2})?)\s*([kK])?\s*"
+    r"(?:total\b|all[- ]?in\b|for\s+(?:the\s+|all\s+)?"
+    r"(?:\d{1,2}\s+|one\s+|two\s+|three\s+|four\s+|five\s+|six\s+)?"
+    r"(?:videos|reels|posts|tiktoks|deliverables|package|bundle|deal|"
+    r"set|series|everything|both)\b)", re.I)
+# A dollar amount explicitly marked as a per-video rate ("$2,500 a video",
+# "$2,333 each", "$1,450 for the video").
+_PV_MONEY_RE = re.compile(
+    r"\$\s*([\d,]+(?:\.\d{1,2})?)\s*([kK])?\s*"
+    r"(?:each\b|(?:a|per)\s+(?:video|reel|post|piece|tiktok)\b"
+    r"|/\s*(?:video|reel|post)\b"
+    r"|for\s+(?:the|a|one)\s+(?:cross-?posted\s+)?(?:video|reel|post|tiktok)\b)",
+    re.I)
 _VIDEOS_RE = re.compile(r"(?:for|across|of|all)?\s*(\d{1,2}|one|two|three|four|"
                         r"five|six)\s*(?:cross-?posted\s+)?"
                         r"(?:videos?|reels?|posts?|tiktoks?|deliverables?)", re.I)
@@ -272,25 +289,44 @@ _INTERPRET_SYSTEM = (
     "Judge only the creator's position, never ours.")
 
 
-def _last_money(text: str) -> Optional[float]:
-    """The last dollar amount in the message. Counters usually end with the
-    ask ('you offered $1,800 but could you do $2,500?')."""
-    value = None
+def _amount(m) -> float:
+    v = float(m.group(1).replace(",", ""))
+    return v * 1000.0 if m.group(2) else v
+
+
+def _ask_amount(text: str,
+                videos: Optional[int]) -> tuple[Optional[float], Optional[int]]:
+    """The message's ask as (total_usd, video_count or None when unstated).
+
+    An amount marked as a total ("$7,000 total", "$7,500 for the 3 videos",
+    "$8,000 for the package") wins — a bundle message states both a total and a
+    per-video rate, and the total is the deal. Otherwise the last amount is the
+    ask (counters usually end with it: 'you offered $1,800 but could you do
+    $2,500?'); when it carries a per-video marker ("$2,500 a video") it is
+    scaled by the stated video count."""
+    total_m = None
+    for m in _TOTAL_MONEY_RE.finditer(text):
+        total_m = m
+    if total_m:
+        return _amount(total_m), videos
+    last = None
     for m in _MONEY_RE.finditer(text):
-        if m.group(1) is not None:
-            value = float(m.group(1).replace(",", ""))
-            if m.group(2):
-                value *= 1000
-        else:
-            value = float(m.group(3)) * 1000
-    return value
+        last = m
+    if last is None:
+        return None, videos
+    value = _amount(last) if last.group(1) is not None else float(last.group(3)) * 1000
+    pv = None
+    for m in _PV_MONEY_RE.finditer(text):
+        pv = m
+    if pv is not None and pv.start() == last.start():   # the ask is a rate
+        return value * (videos or 1), videos or 1
+    return value, videos
 
 
 def heuristic_interpret(text: str) -> CreatorMessage:
     """Keyword/regex fallback for reading a creator message. Deliberately
     simple: the LLM path handles nuance; this keeps replays running offline."""
     lower = text.lower()
-    money = _last_money(text)
     contract = bool(_CONTRACT_RE.search(text))
     flags = {"wants_call": bool(_WANTS_CALL_RE.search(text)),
              "refers_to_call": bool(_REFERS_CALL_RE.search(text))}
@@ -299,6 +335,7 @@ def heuristic_interpret(text: str) -> CreatorMessage:
     if videos_m:
         raw = videos_m.group(1).lower()
         videos = _WORD_NUMBERS.get(raw) or int(raw)
+    total, videos = _ask_amount(text, videos)
 
     # Order matters: an explicit closer wins; then a named number means they
     # are negotiating (a message quoting rates is not a yes, even if it says
@@ -308,10 +345,9 @@ def heuristic_interpret(text: str) -> CreatorMessage:
         return CreatorMessage(Intent.ACCEPTED, raw_text=text, **flags)
     if any(p in lower for p in _REJECT_PHRASES):
         return CreatorMessage(Intent.REJECTING, raw_text=text, **flags)
-    if money is not None:
-        total = money * videos if videos and money < 100000 and _per_video_phrase(lower) else money
+    if total is not None:
         return CreatorMessage(Intent.NEGOTIATING, ask_total_usd=total,
-                              ask_video_count=videos or 1, raw_text=text,
+                              ask_video_count=videos, raw_text=text,
                               contract_terms=contract, **flags)
     if contract:
         return CreatorMessage(Intent.NEGOTIATING, raw_text=text,
@@ -324,10 +360,6 @@ def heuristic_interpret(text: str) -> CreatorMessage:
                                 "what did you have in mind")):
         return CreatorMessage(Intent.INTERESTED, raw_text=text, **flags)
     return CreatorMessage(Intent.UNCLEAR, raw_text=text, **flags)
-
-
-def _per_video_phrase(lower: str) -> bool:
-    return bool(re.search(r"(per|a|each)\s+(video|reel|post|piece)", lower))
 
 
 def interpret_message(text: str) -> CreatorMessage:

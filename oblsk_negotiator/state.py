@@ -89,6 +89,7 @@ class NegotiationState:
     escalation_reason: Optional[str] = None
 
     creator_first_ask: Optional[float] = None   # per-video, normalized at capture
+    consecutive_rejections: int = 0             # creator rejections in a row
     notes: list[str] = field(default_factory=list)
 
     def to_json(self) -> str:

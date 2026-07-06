@@ -476,7 +476,7 @@
      "answer_text": null,
      "deal": {
       "deposit_upfront_pct": 0.0,
-      "flat_per_video": 2166.6667,
+      "flat_per_video": 2933.3333,
       "kind": "deal",
       "net_terms_days": 30,
       "usage_rights_months": 0,
@@ -484,21 +484,21 @@
       "whitelisting": false
      },
      "ev": {
-      "cost_total": 6500.0,
-      "net_mean": 16341.1495,
-      "prob_net_positive": 0.9991,
+      "cost_total": 8800.0,
+      "net_mean": 14041.1495,
+      "prob_net_positive": 0.9938,
       "revenue_mean": 22841.1495,
-      "roi_mean": 3.514
+      "roi_mean": 2.5956
      },
      "non_price_lever": null,
-     "rationale": "Flat rejected (the flat rate). Hold a fair $2,167/video and offer 3 videos ($6,500 total). Net EV up about $10,162 from 2 more independent draws, ROI 3.5x. One offer, no menu.",
+     "rationale": "Flat rejected ($4,000). Hold a fair $2,933/video and offer 3 videos ($8,800 total). Net EV up about $7,862 from 2 more independent draws, ROI 2.6x. One offer, no menu.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
     "state": {
      "bundle_offered": true,
-     "creator_first_ask": null,
+     "creator_first_ask": 4000.0,
      "final_deal": null,
      "final_total": null,
      "flat_offer_made": true,
@@ -515,7 +515,7 @@
      "answer_text": null,
      "deal": {
       "deposit_upfront_pct": 0.0,
-      "flat_per_video": 2166.6667,
+      "flat_per_video": 2933.3333,
       "kind": "deal",
       "net_terms_days": 30,
       "usage_rights_months": 0,
@@ -523,21 +523,21 @@
       "whitelisting": false
      },
      "ev": {
-      "cost_total": 6500.0,
-      "net_mean": 16594.7627,
-      "prob_net_positive": 0.9995,
+      "cost_total": 8800.0,
+      "net_mean": 14294.7627,
+      "prob_net_positive": 0.9932,
       "revenue_mean": 23094.7627,
-      "roi_mean": 3.553
+      "roi_mean": 2.6244
      },
      "non_price_lever": null,
-     "rationale": "Round 3 of 3 with no agreement on their position. Handing to a person.",
+     "rationale": "Round 3 of 3 with no agreement on $4,000. Handing to a person.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
     "state": {
      "bundle_offered": true,
-     "creator_first_ask": null,
+     "creator_first_ask": 4000.0,
      "final_deal": null,
      "final_total": null,
      "flat_offer_made": true,
@@ -665,7 +665,7 @@
      "answer_text": null,
      "deal": {
       "deposit_upfront_pct": 0.0,
-      "flat_per_video": 2166.6667,
+      "flat_per_video": 2933.3333,
       "kind": "deal",
       "net_terms_days": 30,
       "usage_rights_months": 0,
@@ -673,21 +673,21 @@
       "whitelisting": false
      },
      "ev": {
-      "cost_total": 6500.0,
-      "net_mean": 16341.1495,
-      "prob_net_positive": 0.9991,
+      "cost_total": 8800.0,
+      "net_mean": 14041.1495,
+      "prob_net_positive": 0.9938,
       "revenue_mean": 22841.1495,
-      "roi_mean": 3.514
+      "roi_mean": 2.5956
      },
      "non_price_lever": null,
-     "rationale": "Flat rejected (the flat rate). Hold a fair $2,167/video and offer 3 videos ($6,500 total). Net EV up about $10,162 from 2 more independent draws, ROI 3.5x. One offer, no menu.",
+     "rationale": "Flat rejected ($4,000). Hold a fair $2,933/video and offer 3 videos ($8,800 total). Net EV up about $7,862 from 2 more independent draws, ROI 2.6x. One offer, no menu.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
     "state": {
      "bundle_offered": true,
-     "creator_first_ask": null,
+     "creator_first_ask": 4000.0,
      "final_deal": null,
      "final_total": null,
      "flat_offer_made": true,
@@ -704,7 +704,7 @@
      "answer_text": null,
      "deal": {
       "deposit_upfront_pct": 0.25,
-      "flat_per_video": 2166.6667,
+      "flat_per_video": 2933.3333,
       "kind": "deal",
       "net_terms_days": 15,
       "usage_rights_months": 0,
@@ -712,21 +712,21 @@
       "whitelisting": false
      },
      "ev": {
-      "cost_total": 6500.0,
-      "net_mean": 16524.1115,
-      "prob_net_positive": 0.9996,
+      "cost_total": 8800.0,
+      "net_mean": 14224.1115,
+      "prob_net_positive": 0.9949,
       "revenue_mean": 23024.1115,
-      "roi_mean": 3.5422
+      "roi_mean": 2.6164
      },
      "non_price_lever": "fast_pay",
-     "rationale": "Bundle is on the table and they still want more. Hold $6,500 and add faster payment to close the gap.",
+     "rationale": "Bundle is on the table and they still want more. Hold $8,800 and add faster payment to close the gap.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
     "state": {
      "bundle_offered": true,
-     "creator_first_ask": null,
+     "creator_first_ask": 4000.0,
      "final_deal": null,
      "final_total": null,
      "flat_offer_made": true,
@@ -743,7 +743,7 @@
      "answer_text": null,
      "deal": {
       "deposit_upfront_pct": 0.25,
-      "flat_per_video": 2166.6667,
+      "flat_per_video": 2933.3333,
       "kind": "deal",
       "net_terms_days": 15,
       "usage_rights_months": 0,
@@ -751,21 +751,21 @@
       "whitelisting": false
      },
      "ev": {
-      "cost_total": 6500.0,
-      "net_mean": 16594.7627,
-      "prob_net_positive": 0.9995,
+      "cost_total": 8800.0,
+      "net_mean": 14294.7627,
+      "prob_net_positive": 0.9932,
       "revenue_mean": 23094.7627,
-      "roi_mean": 3.553
+      "roi_mean": 2.6244
      },
      "non_price_lever": null,
-     "rationale": "Round 4 of 5 with no agreement on their position. Handing to a person.",
+     "rationale": "Round 4 of 5 with no agreement on $4,000. Handing to a person.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
     "state": {
      "bundle_offered": true,
-     "creator_first_ask": null,
+     "creator_first_ask": 4000.0,
      "final_deal": null,
      "final_total": null,
      "flat_offer_made": true,
@@ -774,6 +774,142 @@
      "questions_answered": 0,
      "round_count": 4,
      "status": "escalated"
+    }
+   }
+  ]
+ },
+ {
+  "name": "reject_twice_soft_close",
+  "steps": [
+   {
+    "decision": {
+     "action": "opening_flat",
+     "answer_text": null,
+     "deal": {
+      "deposit_upfront_pct": 0.0,
+      "flat_per_video": 1500.0,
+      "kind": "deal",
+      "net_terms_days": 30,
+      "usage_rights_months": 0,
+      "video_count": 1,
+      "whitelisting": false
+     },
+     "ev": {
+      "cost_total": 1500.0,
+      "net_mean": 6179.4889,
+      "prob_net_positive": 0.9918,
+      "revenue_mean": 7679.4889,
+      "roi_mean": 5.1197
+     },
+     "non_price_lever": null,
+     "rationale": "Open with one flat number, $1,500 for a single video (engaged, no number yet). ROI 5.1x. If rejected, go to a 3-video bundle.",
+     "requires_approval": true,
+     "reserve_deal": {
+      "deposit_upfront_pct": 0.0,
+      "flat_per_video": 1350.0,
+      "kind": "deal",
+      "net_terms_days": 30,
+      "usage_rights_months": 0,
+      "video_count": 3,
+      "whitelisting": false
+     },
+     "reserve_ev": {
+      "cost_total": 4050.0,
+      "net_mean": 18992.7067,
+      "prob_net_positive": 1.0,
+      "revenue_mean": 23042.7067,
+      "roi_mean": 5.6896
+     }
+    },
+    "state": {
+     "bundle_offered": false,
+     "creator_first_ask": null,
+     "final_deal": null,
+     "final_total": null,
+     "flat_offer_made": true,
+     "flat_revised": false,
+     "phase": "opening",
+     "questions_answered": 0,
+     "round_count": 1,
+     "status": "open"
+    }
+   },
+   {
+    "decision": {
+     "action": "opening_flat",
+     "answer_text": null,
+     "deal": {
+      "deposit_upfront_pct": 0.0,
+      "flat_per_video": 2400.0,
+      "kind": "deal",
+      "net_terms_days": 30,
+      "usage_rights_months": 0,
+      "video_count": 1,
+      "whitelisting": false
+     },
+     "ev": {
+      "cost_total": 2400.0,
+      "net_mean": 5308.5398,
+      "prob_net_positive": 0.9484,
+      "revenue_mean": 7708.5398,
+      "roi_mean": 3.2119
+     },
+     "non_price_lever": null,
+     "rationale": "Flat rejected (the flat rate). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
+     "requires_approval": true,
+     "reserve_deal": {
+      "deposit_upfront_pct": 0.0,
+      "flat_per_video": 2160.0,
+      "kind": "deal",
+      "net_terms_days": 30,
+      "usage_rights_months": 0,
+      "video_count": 3,
+      "whitelisting": false
+     },
+     "reserve_ev": {
+      "cost_total": 6480.0,
+      "net_mean": 16524.6022,
+      "prob_net_positive": 0.9999,
+      "revenue_mean": 23004.6022,
+      "roi_mean": 3.5501
+     }
+    },
+    "state": {
+     "bundle_offered": false,
+     "creator_first_ask": null,
+     "final_deal": null,
+     "final_total": null,
+     "flat_offer_made": true,
+     "flat_revised": true,
+     "phase": "negotiating",
+     "questions_answered": 0,
+     "round_count": 2,
+     "status": "open"
+    }
+   },
+   {
+    "decision": {
+     "action": "soft_close",
+     "answer_text": null,
+     "deal": null,
+     "ev": null,
+     "non_price_lever": null,
+     "rationale": "Not interested. Close gently, keep the door open. High-value creator, flag for follow-up.",
+     "requires_approval": true,
+     "reserve_deal": null,
+     "reserve_ev": null
+    },
+    "state": {
+     "bundle_offered": false,
+     "creator_first_ask": null,
+     "final_deal": null,
+     "final_total": null,
+     "flat_offer_made": true,
+     "flat_revised": true,
+     "phase": "negotiating",
+     "questions_answered": 0,
+     "round_count": 2,
+     "status": "rejected"
     }
    }
   ]
@@ -2845,32 +2981,18 @@
    },
    {
     "decision": {
-     "action": "escalate_bundle",
+     "action": "soft_close",
      "answer_text": null,
-     "deal": {
-      "deposit_upfront_pct": 0.0,
-      "flat_per_video": 2166.6667,
-      "kind": "deal",
-      "net_terms_days": 30,
-      "usage_rights_months": 0,
-      "video_count": 3,
-      "whitelisting": false
-     },
-     "ev": {
-      "cost_total": 6500.0,
-      "net_mean": 16341.1495,
-      "prob_net_positive": 0.9991,
-      "revenue_mean": 22841.1495,
-      "roi_mean": 3.514
-     },
+     "deal": null,
+     "ev": null,
      "non_price_lever": null,
-     "rationale": "Flat rejected (the flat rate). Hold a fair $2,167/video and offer 3 videos ($6,500 total). Net EV up about $10,162 from 2 more independent draws, ROI 3.5x. One offer, no menu.",
+     "rationale": "Not interested. Close gently, keep the door open. High-value creator, flag for follow-up.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
     "state": {
-     "bundle_offered": true,
+     "bundle_offered": false,
      "creator_first_ask": null,
      "final_deal": null,
      "final_total": null,
@@ -2878,8 +3000,8 @@
      "flat_revised": true,
      "phase": "negotiating",
      "questions_answered": 0,
-     "round_count": 3,
-     "status": "open"
+     "round_count": 2,
+     "status": "rejected"
     }
    }
   ]
@@ -4381,26 +4503,12 @@
    },
    {
     "decision": {
-     "action": "escalate_human",
+     "action": "soft_close",
      "answer_text": null,
-     "deal": {
-      "deposit_upfront_pct": 0.0,
-      "flat_per_video": 2166.6667,
-      "kind": "deal",
-      "net_terms_days": 30,
-      "usage_rights_months": 0,
-      "video_count": 3,
-      "whitelisting": false
-     },
-     "ev": {
-      "cost_total": 6500.0,
-      "net_mean": 16594.7627,
-      "prob_net_positive": 0.9995,
-      "revenue_mean": 23094.7627,
-      "roi_mean": 3.553
-     },
+     "deal": null,
+     "ev": null,
      "non_price_lever": null,
-     "rationale": "Round 3 of 3 with no agreement on their position. Handing to a person.",
+     "rationale": "Not interested. Close gently, keep the door open. High-value creator, flag for follow-up.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
@@ -4423,7 +4531,7 @@
      "phase": "negotiating",
      "questions_answered": 0,
      "round_count": 3,
-     "status": "escalated"
+     "status": "rejected"
     }
    }
   ]
@@ -6504,32 +6612,18 @@
    },
    {
     "decision": {
-     "action": "escalate_bundle",
+     "action": "soft_close",
      "answer_text": null,
-     "deal": {
-      "deposit_upfront_pct": 0.0,
-      "flat_per_video": 2166.6667,
-      "kind": "deal",
-      "net_terms_days": 30,
-      "usage_rights_months": 0,
-      "video_count": 3,
-      "whitelisting": false
-     },
-     "ev": {
-      "cost_total": 6500.0,
-      "net_mean": 16341.1495,
-      "prob_net_positive": 0.9991,
-      "revenue_mean": 22841.1495,
-      "roi_mean": 3.514
-     },
+     "deal": null,
+     "ev": null,
      "non_price_lever": null,
-     "rationale": "Flat rejected (the flat rate). Hold a fair $2,167/video and offer 3 videos ($6,500 total). Net EV up about $10,162 from 2 more independent draws, ROI 3.5x. One offer, no menu.",
+     "rationale": "Not interested. Close gently, keep the door open. High-value creator, flag for follow-up.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
     "state": {
-     "bundle_offered": true,
+     "bundle_offered": false,
      "creator_first_ask": null,
      "final_deal": null,
      "final_total": null,
@@ -6537,8 +6631,8 @@
      "flat_revised": true,
      "phase": "negotiating",
      "questions_answered": 0,
-     "round_count": 3,
-     "status": "open"
+     "round_count": 2,
+     "status": "rejected"
     }
    },
    {
@@ -6554,7 +6648,7 @@
      "reserve_ev": null
     },
     "state": {
-     "bundle_offered": true,
+     "bundle_offered": false,
      "creator_first_ask": null,
      "final_deal": null,
      "final_total": null,
@@ -6562,8 +6656,8 @@
      "flat_revised": true,
      "phase": "qa",
      "questions_answered": 1,
-     "round_count": 3,
-     "status": "open"
+     "round_count": 2,
+     "status": "rejected"
     }
    }
   ]
@@ -15273,32 +15367,18 @@
    },
    {
     "decision": {
-     "action": "escalate_bundle",
+     "action": "soft_close",
      "answer_text": null,
-     "deal": {
-      "deposit_upfront_pct": 0.0,
-      "flat_per_video": 2166.6667,
-      "kind": "deal",
-      "net_terms_days": 30,
-      "usage_rights_months": 0,
-      "video_count": 3,
-      "whitelisting": false
-     },
-     "ev": {
-      "cost_total": 6500.0,
-      "net_mean": 16341.1495,
-      "prob_net_positive": 0.9991,
-      "revenue_mean": 22841.1495,
-      "roi_mean": 3.514
-     },
+     "deal": null,
+     "ev": null,
      "non_price_lever": null,
-     "rationale": "Flat rejected (the flat rate). Hold a fair $2,167/video and offer 3 videos ($6,500 total). Net EV up about $10,162 from 2 more independent draws, ROI 3.5x. One offer, no menu.",
+     "rationale": "Not interested. Close gently, keep the door open. High-value creator, flag for follow-up.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
     "state": {
-     "bundle_offered": true,
+     "bundle_offered": false,
      "creator_first_ask": null,
      "final_deal": null,
      "final_total": null,
@@ -15306,47 +15386,55 @@
      "flat_revised": true,
      "phase": "negotiating",
      "questions_answered": 0,
-     "round_count": 3,
-     "status": "open"
+     "round_count": 2,
+     "status": "rejected"
     }
    },
    {
     "decision": {
-     "action": "escalate_human",
+     "action": "accept",
      "answer_text": null,
      "deal": {
       "deposit_upfront_pct": 0.0,
-      "flat_per_video": 2166.6667,
+      "flat_per_video": 2500.0,
       "kind": "deal",
       "net_terms_days": 30,
       "usage_rights_months": 0,
-      "video_count": 3,
+      "video_count": 2,
       "whitelisting": false
      },
      "ev": {
-      "cost_total": 6500.0,
-      "net_mean": 16594.7627,
-      "prob_net_positive": 0.9995,
-      "revenue_mean": 23094.7627,
-      "roi_mean": 3.553
+      "cost_total": 5000.0,
+      "net_mean": 10466.0974,
+      "prob_net_positive": 0.9906,
+      "revenue_mean": 15466.0974,
+      "roi_mean": 3.0932
      },
      "non_price_lever": null,
-     "rationale": "Round 3 of 3 with no agreement on $5,000. Handing to a person.",
+     "rationale": "Accept $5,000 across 2 video(s) ($2,500/video) \u2014 within our $2,958/video ceiling, ROI 3.1x.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
     "state": {
-     "bundle_offered": true,
+     "bundle_offered": false,
      "creator_first_ask": 2500.0,
-     "final_deal": null,
-     "final_total": null,
+     "final_deal": {
+      "deposit_upfront_pct": 0.0,
+      "flat_per_video": 2500.0,
+      "kind": "deal",
+      "net_terms_days": 30,
+      "usage_rights_months": 0,
+      "video_count": 2,
+      "whitelisting": false
+     },
+     "final_total": 5000.0,
      "flat_offer_made": true,
      "flat_revised": true,
-     "phase": "negotiating",
+     "phase": "closing",
      "questions_answered": 0,
      "round_count": 3,
-     "status": "escalated"
+     "status": "accepted"
     }
    }
   ]
@@ -16036,47 +16124,18 @@
    },
    {
     "decision": {
-     "action": "escalate_bundle",
+     "action": "soft_close",
      "answer_text": null,
-     "deal": {
-      "deposit_upfront_pct": 0.0,
-      "kind": "bundle",
-      "lines": [
-       {
-        "fmt": "ig_reel",
-        "price_per_unit": 14025.0,
-        "quantity": 1
-       },
-       {
-        "fmt": "ig_story",
-        "price_per_unit": 4972.5,
-        "quantity": 1
-       },
-       {
-        "fmt": "tiktok",
-        "price_per_unit": 14237.5,
-        "quantity": 1
-       }
-      ],
-      "net_terms_days": 30,
-      "usage_rights_months": 0,
-      "whitelisting": false
-     },
-     "ev": {
-      "cost_total": 33235.0,
-      "net_mean": 250287.2777,
-      "prob_net_positive": 0.9996,
-      "revenue_mean": 283522.2777,
-      "roi_mean": 8.5308
-     },
+     "deal": null,
+     "ev": null,
      "non_price_lever": null,
-     "rationale": "Flat rejected (the flat rate). Offer a 3-format package (Instagram Reel, Instagram Story and TikTok video) at $33,235: each line is the creator's own list price less the standard combo discount, so it reads as a normal package to them. Clears ROI 8.5x on reach, P(net>0) 100%. One offer, no menu.",
+     "rationale": "Not interested. Close gently, keep the door open. High-value creator, flag for follow-up.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
     "state": {
-     "bundle_offered": true,
+     "bundle_offered": false,
      "creator_first_ask": null,
      "final_deal": null,
      "final_total": null,
@@ -16084,53 +16143,24 @@
      "flat_revised": true,
      "phase": "negotiating",
      "questions_answered": 1,
-     "round_count": 3,
-     "status": "open"
+     "round_count": 2,
+     "status": "rejected"
     }
    },
    {
     "decision": {
-     "action": "escalate_human",
+     "action": "soft_close",
      "answer_text": null,
-     "deal": {
-      "deposit_upfront_pct": 0.0,
-      "kind": "bundle",
-      "lines": [
-       {
-        "fmt": "ig_reel",
-        "price_per_unit": 14025.0,
-        "quantity": 1
-       },
-       {
-        "fmt": "ig_story",
-        "price_per_unit": 4972.5,
-        "quantity": 1
-       },
-       {
-        "fmt": "tiktok",
-        "price_per_unit": 14237.5,
-        "quantity": 1
-       }
-      ],
-      "net_terms_days": 30,
-      "usage_rights_months": 0,
-      "whitelisting": false
-     },
-     "ev": {
-      "cost_total": 33235.0,
-      "net_mean": 257812.2101,
-      "prob_net_positive": 0.9991,
-      "revenue_mean": 291047.2101,
-      "roi_mean": 8.7573
-     },
+     "deal": null,
+     "ev": null,
      "non_price_lever": null,
-     "rationale": "Round 3 of 3 with no agreement on their position. Handing to a person.",
+     "rationale": "Not interested. Close gently, keep the door open. High-value creator, flag for follow-up.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
     "state": {
-     "bundle_offered": true,
+     "bundle_offered": false,
      "creator_first_ask": null,
      "final_deal": null,
      "final_total": null,
@@ -16138,8 +16168,8 @@
      "flat_revised": true,
      "phase": "negotiating",
      "questions_answered": 1,
-     "round_count": 3,
-     "status": "escalated"
+     "round_count": 2,
+     "status": "rejected"
     }
    }
   ]
@@ -16402,47 +16432,18 @@
    },
    {
     "decision": {
-     "action": "escalate_bundle",
+     "action": "soft_close",
      "answer_text": null,
-     "deal": {
-      "deposit_upfront_pct": 0.0,
-      "kind": "bundle",
-      "lines": [
-       {
-        "fmt": "ig_reel",
-        "price_per_unit": 14025.0,
-        "quantity": 1
-       },
-       {
-        "fmt": "ig_story",
-        "price_per_unit": 4972.5,
-        "quantity": 1
-       },
-       {
-        "fmt": "tiktok",
-        "price_per_unit": 14237.5,
-        "quantity": 1
-       }
-      ],
-      "net_terms_days": 30,
-      "usage_rights_months": 0,
-      "whitelisting": false
-     },
-     "ev": {
-      "cost_total": 33235.0,
-      "net_mean": 250287.2777,
-      "prob_net_positive": 0.9996,
-      "revenue_mean": 283522.2777,
-      "roi_mean": 8.5308
-     },
+     "deal": null,
+     "ev": null,
      "non_price_lever": null,
-     "rationale": "Flat rejected (the flat rate). Offer a 3-format package (Instagram Reel, Instagram Story and TikTok video) at $33,235: each line is the creator's own list price less the standard combo discount, so it reads as a normal package to them. Clears ROI 8.5x on reach, P(net>0) 100%. One offer, no menu.",
+     "rationale": "Not interested. Close gently, keep the door open. High-value creator, flag for follow-up.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
     "state": {
-     "bundle_offered": true,
+     "bundle_offered": false,
      "creator_first_ask": null,
      "final_deal": null,
      "final_total": null,
@@ -16450,8 +16451,8 @@
      "flat_revised": true,
      "phase": "negotiating",
      "questions_answered": 1,
-     "round_count": 3,
-     "status": "open"
+     "round_count": 2,
+     "status": "rejected"
     }
    }
   ]
@@ -20080,32 +20081,18 @@
    },
    {
     "decision": {
-     "action": "escalate_bundle",
+     "action": "soft_close",
      "answer_text": null,
-     "deal": {
-      "deposit_upfront_pct": 0.0,
-      "flat_per_video": 2166.6667,
-      "kind": "deal",
-      "net_terms_days": 30,
-      "usage_rights_months": 0,
-      "video_count": 3,
-      "whitelisting": false
-     },
-     "ev": {
-      "cost_total": 6500.0,
-      "net_mean": 16341.1495,
-      "prob_net_positive": 0.9991,
-      "revenue_mean": 22841.1495,
-      "roi_mean": 3.514
-     },
+     "deal": null,
+     "ev": null,
      "non_price_lever": null,
-     "rationale": "Flat rejected (the flat rate). Hold a fair $2,167/video and offer 3 videos ($6,500 total). Net EV up about $10,162 from 2 more independent draws, ROI 3.5x. One offer, no menu.",
+     "rationale": "Not interested. Close gently, keep the door open. High-value creator, flag for follow-up.",
      "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
     "state": {
-     "bundle_offered": true,
+     "bundle_offered": false,
      "creator_first_ask": null,
      "final_deal": null,
      "final_total": null,
@@ -20113,8 +20100,8 @@
      "flat_revised": true,
      "phase": "negotiating",
      "questions_answered": 2,
-     "round_count": 3,
-     "status": "open"
+     "round_count": 2,
+     "status": "rejected"
     }
    },
    {
@@ -20123,19 +20110,19 @@
      "answer_text": null,
      "deal": {
       "deposit_upfront_pct": 0.0,
-      "flat_per_video": 2166.6667,
+      "flat_per_video": 2400.0,
       "kind": "deal",
       "net_terms_days": 30,
       "usage_rights_months": 0,
-      "video_count": 3,
+      "video_count": 1,
       "whitelisting": false
      },
      "ev": {
-      "cost_total": 6500.0,
-      "net_mean": 16594.7627,
-      "prob_net_positive": 0.9995,
-      "revenue_mean": 23094.7627,
-      "roi_mean": 3.553
+      "cost_total": 2400.0,
+      "net_mean": 5283.7362,
+      "prob_net_positive": 0.9471,
+      "revenue_mean": 7683.7362,
+      "roi_mean": 3.2016
      },
      "non_price_lever": null,
      "rationale": "Ask $21,200 is more than 2x what the numbers support. A person should decide whether to walk or stretch.",
@@ -20144,7 +20131,7 @@
      "reserve_ev": null
     },
     "state": {
-     "bundle_offered": true,
+     "bundle_offered": false,
      "creator_first_ask": 7066.6667,
      "final_deal": null,
      "final_total": null,
@@ -20152,7 +20139,7 @@
      "flat_revised": true,
      "phase": "negotiating",
      "questions_answered": 2,
-     "round_count": 3,
+     "round_count": 2,
      "status": "escalated"
     }
    }

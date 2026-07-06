@@ -93,6 +93,29 @@ def test_bundle_reply_carries_package_terms():
     assert pkg["effectivePerVideoUsd"] <= out["agent"]["ladder"]["walkAwayUsd"] * 1.01
 
 
+def test_own_bundle_message_reconstructs_and_holds():
+    # Regression: the agent's own "$7,000 total for 3 videos ($2,333 each)"
+    # used to re-read as a $2,333 offer, so a creator follow-up got a hold_firm
+    # reply restating a slashed price. The standing offer must survive the
+    # thread -> state round trip intact.
+    out = suggest({
+        "creatorHandle": "Devin",
+        "medianViewsPerVideo": 150000,
+        "messages": [
+            _msg("brand", "We were thinking $1,450 for the video.", 1),
+            _msg("creator", "Could you do $2,450 a video?", 2),
+            _msg("brand", "Here is something that might work better for both "
+                          "of us: $7,000 total for 3 videos ($2,333 each).", 3),
+            _msg("creator", "Hey, just following up on this! Still interested.", 4),
+        ],
+    }, CAMP)
+    assert out["agent"]["action"] == "hold_firm"
+    deal = out["agent"]["deal"]
+    assert deal["video_count"] == 3
+    assert abs(deal["flat_per_video"] * 3 - 7000) <= 1
+    assert "$7,000" in out["message"]
+
+
 def test_bad_payloads_raise():
     with pytest.raises(ValueError, match="messages"):
         suggest({"medianViewsPerVideo": 150000, "messages": []}, CAMP)

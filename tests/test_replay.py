@@ -60,6 +60,31 @@ def test_heuristic_reads_asks():
     assert heuristic_interpret("What's the timeline?").intent == Intent.QUESTION
 
 
+def test_heuristic_totals_beat_trailing_rates():
+    # A bundle message states both a total and a per-video rate; the total is
+    # the deal and must win over the last (smaller) figure.
+    m = heuristic_interpret("We can do $7,000 total for 3 videos ($2,333 each).")
+    assert m.ask_total_usd == 7000 and m.ask_video_count == 3
+    m = heuristic_interpret("Could you do $2,500 a video ($7,500 for the 3 videos)?")
+    assert m.ask_total_usd == 7500 and m.ask_video_count == 3
+    # A package counter with no count stated leaves the count open, so the
+    # tree can judge it against the offer on the table instead of per-video.
+    m = heuristic_interpret("Could you get closer to $8,000 for the package?")
+    assert m.ask_total_usd == 8000 and m.ask_video_count is None
+
+
+def test_prose_offers_reparse_to_the_same_deal():
+    # Round trip: every deal phrase prose writes must re-read as the same deal,
+    # because the platform service reconstructs thread state from our own
+    # previously sent messages.
+    from oblsk_negotiator.prose import _deal_phrase
+    from oblsk_negotiator.ev_engine import Deal
+    for deal in (Deal(1, 1450.0), Deal(3, 7000 / 3), Deal(2, 2500.0)):
+        m = heuristic_interpret(f"We were thinking {_deal_phrase(deal)}.")
+        assert abs(m.ask_total_usd - deal.total_usd) <= 1
+        assert (m.ask_video_count or 1) == deal.video_count
+
+
 def test_email_thread_parses_real_gmail_paste():
     with open(UNEST_THREAD, encoding="utf-8") as f:
         text = f.read()

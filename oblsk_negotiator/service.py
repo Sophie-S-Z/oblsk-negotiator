@@ -114,6 +114,7 @@ def _state_from_turns(turns: list[Turn]) -> NegotiationState:
     the anchor; the creator's first ask is captured per-video the same way the
     live tree captures it."""
     state = NegotiationState("platform", "platform", "thread")
+    last_brand_vc = 1
     for turn in turns:
         m = heuristic_interpret(turn.text)
         if turn.sender == "us":
@@ -128,6 +129,7 @@ def _state_from_turns(turns: list[Turn]) -> NegotiationState:
                 state.round_count += 1
                 state.record_concession(deal_to_dict(deal), deal.total_usd,
                                         None, video_count=vc)
+                last_brand_vc = vc
             if _WANTS_CALL_RE.search(turn.text):
                 state.call_proposed = True
         else:
@@ -135,8 +137,12 @@ def _state_from_turns(turns: list[Turn]) -> NegotiationState:
                 state.questions_answered += 1
             if (m.ask_total_usd and state.flat_offer_made
                     and state.creator_first_ask is None):
+                # No count stated means the ask covers the standing offer.
                 state.creator_first_ask = (
-                    m.ask_total_usd / max(m.ask_video_count or 1, 1))
+                    m.ask_total_usd / max(m.ask_video_count or last_brand_vc, 1))
+            state.consecutive_rejections = (
+                state.consecutive_rejections + 1
+                if m.intent.value == "rejecting" else 0)
     return state
 
 
