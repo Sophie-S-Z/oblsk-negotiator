@@ -6,8 +6,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 import numpy as np
 
-from oblsk_negotiator.ev_engine import (CreatorEconomics, Deal, fit_view_model,
-                                        ev_distribution, synthetic_tier_prior)
+from oblsk_negotiator.ev_engine import (CreatorEconomics, Deal, ViewModel,
+                                        fit_view_model, ev_distribution,
+                                        synthetic_tier_prior)
 from oblsk_negotiator.bundles import flat_offer, bundle_from_flat
 from oblsk_negotiator.state import NegotiationState, AutonomyLevel, Phase
 from oblsk_negotiator.behavior_tree import (decide, CreatorMessage, Intent,
@@ -334,6 +335,75 @@ def test_autonomous_closes_without_approvals():
                                             max_videos=5, seed=1),
                         autonomy=AutonomyLevel.AUTONOMOUS)
     assert o.status == "accepted" and o.approvals_requested == 0
+
+
+def test_composed_bundle_accept_above_singleformat_walkaway():
+    """Composed-bundle exception: the bundle's own blended per-video rate is its
+    own ceiling (it prices off each format's own reach), so a counter under the
+    bundle's bundled-rate plus the accept margin closes, even though it sits
+    well above the single-format walk_away. Without the exception, the cap
+    would refuse the deal and we'd lose it."""
+    from oblsk_negotiator.ev_engine import (FormatCatalog, FormatSpec,
+                                            deal_to_dict)
+    from oblsk_negotiator.rate_card import RateCard, IG_REEL, IG_STORY, TIKTOK
+    from oblsk_negotiator.bundles import compose_bundle
+
+    # High-reach formats so the composed bundle clears the 3x ROI hurdle at a
+    # per-video rate well above the single-format VM's walk_away.
+    def _format_vm(median):
+        return ViewModel(family="lognormal",
+                         params={"mu": float(np.log(median)), "sigma": 1.0},
+                         n_posts_fit=20, median_views=median,
+                         notes=f"reach median {median:,.0f}")
+    catalog = FormatCatalog({
+        IG_REEL:  FormatSpec(IG_REEL,  _format_vm(1_200_000), ECON),
+        IG_STORY: FormatSpec(IG_STORY, _format_vm(800_000),  ECON),
+        TIKTOK:   FormatSpec(TIKTOK,   _format_vm(1_500_000), ECON),
+    })
+    rate_card = RateCard(prices={IG_REEL: 16500, IG_STORY: 5850, TIKTOK: 16750},
+                         creator="test creator")
+    composed = compose_bundle(rate_card, catalog, roi_hurdle=CTX.roi_target,
+                              primary_fmt=IG_REEL,
+                              allowed_formats=[IG_REEL, IG_STORY, TIKTOK])
+    assert composed is not None and composed.video_count == 3
+    composed_pv = composed.flat_per_video
+
+    # Sanity: this test only exercises the exception if the composed bundle's
+    # blended rate is genuinely above the single-format walk_away.
+    singleformat_walk = _max_pay_per_video(VM, ECON, CTX)
+    assert composed_pv > singleformat_walk, \
+        "test setup: composed_pv must exceed walk_away to exercise the exception"
+
+    # State: a composed bundle is already on the table (the negotiation has
+    # flattened the standalone offer and escalated into a multi-format package).
+    s = NegotiationState("c", "k", "t")
+    s.flat_offer_made = s.flat_revised = s.bundle_offered = True
+    s.phase = Phase.NEGOTIATING
+    s.round_count = 3
+    s.record_concession(deal_to_dict(composed), composed.total_usd, None,
+                        video_count=composed.video_count)
+
+    ask_pv = composed_pv * 1.04            # just under accept_margin (1.05)
+    ask_total = ask_pv * composed.video_count
+    msg = CreatorMessage(intent=Intent.NEGOTIATING,
+                         ask_total_usd=ask_total,
+                         ask_video_count=composed.video_count,
+                         raw_text=f"Could you do ${ask_pv:,.0f} a video?")
+    d = decide(msg, s, VM, ECON, CTX, catalog=catalog, rate_card=rate_card)
+    assert d.action == Action.ACCEPT, (
+        f"composed-bundle on table + counter under bundle-pv*1.05 should "
+        f"accept, got {d.action.value}; ask_pv={ask_pv:,.0f}, "
+        f"composed_pv={composed_pv:,.0f}, walk_away={singleformat_walk:,.0f}")
+    assert d.deal.video_count == composed.video_count
+    assert d.deal.total_usd == ask_total   # locked at their ask
+    # And the symmetry: above the bundle margin escalates, doesn't silently accept.
+    high = composed_pv * 1.10
+    d_high = decide(CreatorMessage(intent=Intent.NEGOTIATING,
+                                   ask_total_usd=high * composed.video_count,
+                                   ask_video_count=composed.video_count,
+                                   raw_text="too high"),
+                    s, VM, ECON, CTX, catalog=catalog, rate_card=rate_card)
+    assert d_high.action != Action.ACCEPT
 
 
 if __name__ == "__main__":

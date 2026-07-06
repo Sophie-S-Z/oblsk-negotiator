@@ -237,7 +237,10 @@ def fit_view_model(
 
     `timestamps` (epoch seconds, aligned with post_views) turns on recency
     weighting with the given half-life, so a rising creator is not dragged down
-    by old posts. `sponsored_factor` is the organic->sponsored haircut: paid
+    by old posts. Posts with timestamp <= 0 are treated as 'just so' (no age
+    decay) -- pass real epoch seconds for posts you want to age out, and omit
+    posts whose timestamp you do not know rather than passing 0.
+    `sponsored_factor` is the organic->sponsored haircut: paid
     posts under-deliver organic history, so views are scaled by it before the
     fit (0.8 is the calculator's default; 1.0 leaves history untouched).
     """

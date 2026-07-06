@@ -97,9 +97,9 @@ oblsk_negotiator/      the package
   events.py            the same thread as an append-only event log
   creator_sim.py       a parameterized simulated creator for closed-loop testing
   runner.py            the loop, the approval gate, the metrics
-tests/                 67 checks, all offline
+tests/                 72 checks, all offline
 examples/              campaign config + real and sample threads for replay
-docs/                  AGENT_GUIDE.pdf (how to use it) + CALCULATOR.md (the pricing model)
+docs/                  USAGE.md (how to run it) + CALCULATOR.md (the pricing model) + INTEGRATION.md
 figures/               architecture and behavior-tree diagrams
 ```
 
@@ -107,10 +107,12 @@ The pricing ladder, recency weighting, sponsored haircut, authenticity heuristic
 
 ## Running it
 
+New here? [docs/USAGE.md](docs/USAGE.md) is the full plain-language manual: install, every way to run it, every feature explained, start to finish.
+
 ```bash
 pip install -r requirements.txt
 pip install anthropic                    # optional: enables the LLM path
-python -m pytest                         # 67 checks, offline
+python -m pytest                         # 72 checks, offline
 ```
 
 **Talk to it yourself** — you play the creator, the agent replies live. This is the exact read → price → draft the platform runs on real Gmail threads; here you type the messages:
