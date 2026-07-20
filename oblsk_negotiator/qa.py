@@ -35,6 +35,12 @@ class CampaignBrief:
     content_style: str = "your usual style — we don't over-direct the edit or the voice, whatever feels native to your feed"
     primary_format: Optional[str] = None      # the format the campaign opens on
     allowed_formats: Optional[list] = None     # formats the agent may bundle in
+    # Reply language override. When set the agent always replies in this
+    # language; when None it mirrors the creator's detected message language.
+    reply_language: Optional[str] = None
+    # The team's own outreach voice, injected as a baseline structure/tone for
+    # the LLM to draft around (numbers still come from the calculator).
+    voice_template: Optional[str] = None
     extra_facts: dict = field(default_factory=dict)
 
 
@@ -145,13 +151,13 @@ def answer_from_brief(question: str, brief: CampaignBrief) -> str:
 
 
 def answer_question(question: str, brief: CampaignBrief,
-                    thread_history: str = "") -> str:
+                    thread_history: str = "", *, language: str = "English") -> str:
     """Answer a creator question: LLM from the brief when available, keyword
     fallback otherwise. Budget questions never get an answer here — the caller
     routes them to an offer — but guard anyway so no path quotes a rate."""
     if classify_question_topic(question) == "budget":
         return answer_from_brief(question, brief)
-    prompt = build_qa_llm_prompt(question, brief, thread_history)
+    prompt = build_qa_llm_prompt(question, brief, thread_history, language=language)
     draft = llm.complete(prompt["system"], prompt["user"], max_tokens=300)
     if draft and "$" not in draft:
         return draft.strip()
@@ -159,7 +165,8 @@ def answer_question(question: str, brief: CampaignBrief,
 
 
 def build_qa_llm_prompt(question: str, brief: CampaignBrief,
-                        thread_history: str = "") -> dict:
+                        thread_history: str = "", *,
+                        language: str = "English") -> dict:
     facts = "\n".join([
         f"Brand: {brief.brand}", f"Product: {brief.product}",
         f"Platform: {brief.platform}", f"Deliverables: {brief.deliverables}",
@@ -173,6 +180,8 @@ def build_qa_llm_prompt(question: str, brief: CampaignBrief,
         "imply you are an AI. Use only the campaign facts provided; if you do not "
         "know something, say you will check. Never quote a rate or budget; if asked "
         "about money, say you will send a number shortly. Under 90 words.")
+    if language and language.lower() != "english":
+        system += f" Write your reply in {language}."
     user = [f"Campaign facts:\n{facts}", f"\nCreator asked: {question}"]
     if thread_history:
         user.append(f"\nPrior thread (for tone):\n{thread_history}")

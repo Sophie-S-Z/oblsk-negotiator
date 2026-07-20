@@ -44,6 +44,18 @@ brief:
     your usual style — the videos that already perform on your feed. Keep it
     native and personal (a real parent moment beats a polished ad); we don't
     prescribe an aesthetic or editing style beyond the short compliance guide
+  # reply_language: left unset so the agent mirrors the creator's language
+  # (Spanish thread -> Spanish reply). Set it (e.g. "English") to pin one.
+  #
+  # voice_template: the team's own 90%-fit outreach voice. The agent uses this
+  # as its baseline tone/structure for the opening and fills the calculator's
+  # numbers in around it, instead of a generic drafted voice.
+  voice_template: >-
+    Hi {name}, thanks for the reply! Quick intro: we're UNest, an investment
+    account for kids, and we partner with creators like you to reach parents.
+    We run every creator through our calculator, and between those estimates and
+    our budget we landed on {offer} for {deliverables}. Let me know if anything
+    needs clarifying and we can take it from there.
   extra_facts:
     equity: >-
       UNest can structure part of the compensation as equity in the company,

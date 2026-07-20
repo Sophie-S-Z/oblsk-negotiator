@@ -137,7 +137,9 @@ def render_template(decision: Decision, creator_name: str = "there",
 
 
 def write_message(decision: Decision, creator_name: str = "there",
-                  thread_history: str = "", seed: int | None = None) -> str:
+                  thread_history: str = "", seed: int | None = None, *,
+                  language: str = "English",
+                  voice_template: str | None = None) -> str:
     """The outbound message for a decision: LLM-drafted when available, template
     otherwise. A draft that does not state the deal's total is discarded — the
     numbers come from the calculator, and a message that loses them is worse
@@ -145,7 +147,8 @@ def write_message(decision: Decision, creator_name: str = "there",
     if decision.action in (Action.ASK_HUMAN, Action.PAUSE_HUMAN):
         # Internal moves: nothing is drafted for the creator.
         return render_template(decision, creator_name=creator_name, seed=seed)
-    prompt = build_llm_prompt(decision, creator_name, thread_history)
+    prompt = build_llm_prompt(decision, creator_name, thread_history,
+                              language=language, voice_template=voice_template)
     draft = llm.complete(prompt["system"], prompt["user"], max_tokens=400)
     if draft and _numbers_intact(decision, draft):
         return draft.strip()
@@ -165,7 +168,8 @@ def _numbers_intact(decision: Decision, draft: str) -> bool:
 
 
 def build_llm_prompt(decision: Decision, creator_name: str,
-                     thread_history: str = "") -> dict:
+                     thread_history: str = "", *, language: str = "English",
+                     voice_template: str | None = None) -> dict:
     d = decision.deal
     if decision.action == Action.ANSWER_QUESTION:
         deal_brief = "no offer yet, answer the question"
@@ -180,9 +184,16 @@ def build_llm_prompt(decision: Decision, creator_name: str,
         "person. Never reveal or imply you are an AI. Never sound templated. Soften "
         "the offer. Use exactly the deal terms provided; do not invent numbers. "
         "Lead with one offer; never present a menu. Under 110 words.")
+    if language and language.lower() != "english":
+        system += f" Write your message in {language}."
     parts = [f"Creator name: {creator_name}",
              f"Move to communicate: {decision.action.value}",
              f"Deal terms to state exactly: {deal_brief}"]
+    if voice_template:
+        parts.append(
+            "Use this as your baseline voice and structure — mirror its tone and "
+            "shape, filling in the specific terms above; do not copy it verbatim "
+            f"or keep its example numbers:\n{voice_template}")
     if decision.action == Action.ANSWER_QUESTION and decision.answer_text:
         parts.append(f"Answer to convey: {decision.answer_text}")
     if decision.non_price_lever:

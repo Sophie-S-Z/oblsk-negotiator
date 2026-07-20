@@ -69,6 +69,10 @@ class CreatorMessage:
     # They reference a call or conversation the agent was not part of. That
     # context lives with the team, so the agent asks before acting on it.
     refers_to_call: bool = False
+    # The language the creator wrote in (ISO name, e.g. "Spanish"), detected by
+    # the LLM interpreter. None when unknown/offline; resolves to the campaign
+    # override or English downstream.
+    language: Optional[str] = None
 
 
 @dataclass
@@ -145,6 +149,13 @@ class Decision:
     # What the agent needs from the team: the specific question to answer
     # (ASK_HUMAN) or the follow-through to do (PROPOSE_CALL: run the call).
     human_prompt: Optional[str] = None
+
+
+def resolve_reply_language(brief, msg) -> str:
+    """The language to reply in: the campaign override wins, else the creator's
+    detected message language, else English."""
+    override = getattr(brief, "reply_language", None) if brief is not None else None
+    return override or getattr(msg, "language", None) or "English"
 
 
 def _requires_approval(action: Action, total: Optional[float],
@@ -612,7 +623,8 @@ def _question(dctx: DecisionContext) -> Decision:
     if not state.flat_offer_made and state.questions_answered >= ctx.qa_offer_after:
         return _opening_flat(state, dctx.vm, dctx.econ, ctx,
                              reason="several questions answered, time for a number")
-    answer = answer_question(msg.raw_text, brief)
+    answer = answer_question(msg.raw_text, brief,
+                             language=resolve_reply_language(brief, msg))
     nudge = forward_nudge(state.questions_answered, state.flat_offer_made)
     answer_text = f"{answer} {nudge}".strip() if nudge else answer
     return Decision(

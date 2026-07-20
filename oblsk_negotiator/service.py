@@ -41,7 +41,7 @@ from typing import Optional
 import numpy as np
 
 from . import llm
-from .behavior_tree import Action, Decision, decide
+from .behavior_tree import Action, Decision, decide, resolve_reply_language
 from .bundles import flat_offer
 from .campaign import Campaign, load_campaign
 from .ev_engine import ViewModel, deal_to_dict, fit_view_model
@@ -234,7 +234,9 @@ def suggest(payload: dict, camp: Campaign) -> dict:
     history = "\n".join(f"{t.sender}: {t.text}" for t in turns[:-1][-6:])
     message = write_message(decision,
                             creator_name=payload.get("creatorHandle") or "there",
-                            thread_history=history)
+                            thread_history=history,
+                            language=resolve_reply_language(camp.brief, msg),
+                            voice_template=camp.brief.voice_template)
     ladder = price_ladder(vm, camp.econ, camp.ctx.pricing_policy())
     return _suggestion_from(decision, message, payload, msg, ladder, vm, camp)
 
