@@ -44,10 +44,10 @@ from . import llm
 from .behavior_tree import Action, Decision, decide, resolve_reply_language
 from .bundles import flat_offer
 from .campaign import Campaign, load_campaign
-from .ev_engine import ViewModel, deal_to_dict, fit_view_model
+from .ev_engine import CreatorEconomics, ViewModel, deal_to_dict, fit_view_model
 from .pricing import price_ladder
 from .prose import write_message
-from .replay import _WANTS_CALL_RE, Turn, heuristic_interpret, interpret_message
+from .replay import _WANTS_CALL_RE, Turn, interpret_message
 from .state import NegotiationState
 
 # Nearest fit into the platform's closed NegotiatorStrategyKind union (it only
@@ -116,7 +116,11 @@ def _state_from_turns(turns: list[Turn]) -> NegotiationState:
     state = NegotiationState("platform", "platform", "thread")
     last_brand_vc = 1
     for turn in turns:
-        m = heuristic_interpret(turn.text)
+        # Read history the same way we read the live message: LLM-first (with a
+        # heuristic fallback offline). The old heuristic-only path let the wrong
+        # dollar figure win on human-phrased offers ("you mentioned $500, we can
+        # do $400"), silently misrepresenting our recorded position.
+        m = interpret_message(turn.text)
         if turn.sender == "us":
             if m.ask_total_usd:
                 vc = max(m.ask_video_count or 1, 1)
@@ -164,7 +168,8 @@ def _variance(views: list[float], vm: ViewModel) -> dict:
 
 
 def _suggestion_from(decision: Decision, message: str, payload: dict,
-                     msg_ask, ladder, vm: ViewModel, camp: Campaign) -> dict:
+                     msg_ask, ladder, vm: ViewModel, camp: Campaign,
+                     ev_snapshot: dict | None = None) -> dict:
     d = decision.deal
     package = None
     if d is not None and d.video_count > 1:
@@ -220,25 +225,55 @@ def _suggestion_from(decision: Decision, message: str, payload: dict,
                 "binding": ladder.binding,
                 "downsideLimited": ladder.downside_limited,
             },
+            # Frozen calculator inputs for this thread. Store and resend this in
+            # the next request's `evSnapshot` to keep pricing stable as the
+            # creator's post history grows.
+            "evSnapshot": ev_snapshot,
         },
     }
+
+
+def _ev_snapshot(vm: ViewModel, econ: CreatorEconomics) -> dict:
+    """Freeze the calculator's per-thread inputs: the fitted reach model and the
+    revenue economics. Echoed back to the platform so later turns price off the
+    same numbers instead of re-fitting from a post history that keeps growing."""
+    return {"viewModel": vm.to_dict(),
+            "econ": {"conversionRate": econ.conversion_rate,
+                     "ltvUsd": econ.ltv_usd}}
+
+
+def _from_ev_snapshot(snapshot: dict) -> tuple[ViewModel, CreatorEconomics]:
+    e = snapshot["econ"]
+    return (ViewModel.from_dict(snapshot["viewModel"]),
+            CreatorEconomics(conversion_rate=float(e["conversionRate"]),
+                             ltv_usd=float(e["ltvUsd"])))
 
 
 def suggest(payload: dict, camp: Campaign) -> dict:
     """One suggestion for one thread. Raises ValueError on a bad payload."""
     turns = _turns_from(payload)
-    vm = _view_model_from(payload)
+    # Freeze the calculator inputs for the life of the thread. If the platform
+    # sent back the snapshot from an earlier turn, price off that; otherwise
+    # build it now from the payload and echo it so the next turn can pin it.
+    incoming = payload.get("evSnapshot")
+    if incoming:
+        vm, econ = _from_ev_snapshot(incoming)
+    else:
+        vm, econ = _view_model_from(payload), camp.econ
+    snapshot = incoming or _ev_snapshot(vm, econ)
     state = _state_from_turns(turns[:-1])
+    state.ev_snapshot = snapshot
     msg = interpret_message(turns[-1].text)
-    decision = decide(msg, state, vm, camp.econ, camp.ctx, brief=camp.brief)
+    decision = decide(msg, state, vm, econ, camp.ctx, brief=camp.brief)
     history = "\n".join(f"{t.sender}: {t.text}" for t in turns[:-1][-6:])
     message = write_message(decision,
                             creator_name=payload.get("creatorHandle") or "there",
                             thread_history=history,
                             language=resolve_reply_language(camp.brief, msg),
                             voice_template=camp.brief.voice_template)
-    ladder = price_ladder(vm, camp.econ, camp.ctx.pricing_policy())
-    return _suggestion_from(decision, message, payload, msg, ladder, vm, camp)
+    ladder = price_ladder(vm, econ, camp.ctx.pricing_policy())
+    return _suggestion_from(decision, message, payload, msg, ladder, vm, camp,
+                            ev_snapshot=snapshot)
 
 
 # ---- HTTP wrapper (stdlib only, no new dependencies) --------------------------

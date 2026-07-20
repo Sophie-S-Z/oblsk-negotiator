@@ -105,6 +105,14 @@ class CampaignContext:
     bundle_bulk_discount: float = 0.10         # per-video discount for committing to several
     ask_bulk_discount: float = 0.05            # lighter discount when anchored to their ask
     high_value_threshold_usd: float = 5000.0   # expected revenue/video that flags follow-up
+    # Anomaly guard on the single-format bundle path: a new offer's per-video
+    # rate may not exceed the last recorded concession's by more than this. The
+    # ladder legitimately concedes upward in large steps (an opening at the
+    # anchor to a revised flat at target is already ~60%), so this is a coarse
+    # net against gross drift — a recompute jumping to several times the number
+    # we already offered — not a tight step limit. ev_snapshot freezing the
+    # inputs per thread is the primary fix; this backstops it.
+    max_concession_step: float = 1.0
     money_step: float = 50.0                   # round flat offers to this
     bundle_money_step: float = 100.0           # round bundle totals to this
     call_windows: str = ""                     # when our team can take intro calls,
@@ -265,6 +273,19 @@ def _bundle_total(vm, econ, ctx, ask_per_video: Optional[float] = None,
                                _ladder(vm, econ, ctx).walk_away * videos)
 
 
+def _concession_pv_ceiling(state, ctx) -> Optional[float]:
+    """The most a new per-video offer may be, given what we already put on the
+    table: the last recorded concession's per-video rate plus the anomaly
+    margin. None when there is no prior offer. Guards against a drifted recompute
+    (e.g. a mismatched view model) proposing a rate several times what we already
+    offered — the $2,200-after-$400 shape."""
+    if not state.concession_history:
+        return None
+    last = state.concession_history[-1]
+    last_pv = last.offered_total / max(last.offered_video_count, 1)
+    return last_pv * (1.0 + ctx.max_concession_step)
+
+
 def _willingness_per_video(state, vm, econ, ctx) -> float:
     """The most per video we would happily pay right now. We concede up the
     ladder as the thread progresses: the target while the simple flat deal is
@@ -402,6 +423,11 @@ def _escalate_bundle(state, vm, econ, ctx, ask, ask_per_video=None, *,
     # independent draw, so the total return scales while the rate stays fair.
     target_videos = ctx.target_videos
     total = _bundle_total(vm, econ, ctx, ask_per_video, target_videos)
+    ceiling_pv = _concession_pv_ceiling(state, ctx)
+    if ceiling_pv is not None and total / target_videos > ceiling_pv:
+        # Recompute drifted above what we already offered — pin to the ceiling.
+        total = _round_money_capped(ceiling_pv * target_videos,
+                                    ctx.bundle_money_step, ceiling_pv * target_videos)
     bundle = Deal(video_count=target_videos, flat_per_video=total / target_videos)
     ev = _score(bundle, vm, econ, seed=7)
 

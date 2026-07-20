@@ -217,6 +217,25 @@ class ViewModel:
         s = self.sample(n, rng)
         return float(s.std() / s.mean()) if s.mean() > 0 else 0.0
 
+    def to_dict(self) -> dict:
+        """A JSON-safe snapshot of the fitted model, so a thread can freeze the
+        creator's reach and price off the same numbers on every later turn."""
+        params = {k: (v.tolist() if isinstance(v, np.ndarray) else v)
+                  for k, v in self.params.items()}
+        return {"family": self.family, "params": params,
+                "n_posts_fit": self.n_posts_fit,
+                "median_views": self.median_views, "notes": self.notes}
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "ViewModel":
+        params = dict(d["params"])
+        if d["family"] == "empirical_prior" and "prior_samples" in params:
+            params["prior_samples"] = np.asarray(params["prior_samples"], dtype=float)
+        return cls(family=d["family"], params=params,
+                   n_posts_fit=int(d["n_posts_fit"]),
+                   median_views=float(d["median_views"]),
+                   notes=d.get("notes", ""))
+
 
 def fit_view_model(
     post_views: list[float] | np.ndarray,

@@ -115,7 +115,17 @@ it. Dollar offers found in `brand` messages become the agent's recorded
 positions — whoever sent them, the agent or a person — so the agent picks up
 mid-flight threads without re-opening at the anchor, and humans can freely
 take over and hand back. The creator's first ask is read from their messages
-the same way.
+the same way. History turns are read with the same LLM-first interpreter as the
+live message (heuristic fallback offline), so a human-phrased brand offer whose
+own number isn't the last dollar in the sentence is still recorded correctly.
+
+**Freezing the pricing inputs (`evSnapshot`).** Each response's `agent.evSnapshot`
+holds the calculator inputs (the fitted view model and economics) frozen for
+this thread. Store it and send it back in the next request's top-level
+`evSnapshot` field: when present, the service prices off it instead of re-fitting
+from `recentPostViews`, so the ladder stays stable as the creator's post history
+grows. Omit it and the service recomputes deterministically from the payload
+(fine for a first turn or if you don't persist it).
 
 ## 4. Convex-side wiring
 

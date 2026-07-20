@@ -227,6 +227,25 @@ def test_implausibly_low_ask_asks_human_not_accept():
     assert ok.action == Action.ACCEPT
 
 
+def test_bundle_offer_clamped_to_prior_concession():
+    # Safety net: if a drifted recompute would price a bundle far above what we
+    # already offered (the $2,200-after-$400 shape), the per-video rate is pinned
+    # to the last concession plus the anomaly margin.
+    s = NegotiationState("c", "k", "t")
+    decide(CreatorMessage(Intent.INTERESTED), s, VM, ECON, CTX)          # open
+    decide(CreatorMessage(Intent.REJECTING, raw_text="too low"), s, VM, ECON, CTX)  # revise
+    # Simulate a corrupted/low recorded concession (a misread we should not
+    # bid away from): our last position reads as $400 for one video.
+    s.concession_history[-1].offered_total = 400.0
+    s.concession_history[-1].offered_video_count = 1
+    d = decide(CreatorMessage(Intent.NEGOTIATING, ask_total_usd=4000,
+                              raw_text="I need a lot more"), s, VM, ECON, CTX)
+    assert d.action == Action.ESCALATE_BUNDLE
+    per_video = d.deal.total_usd / d.deal.video_count
+    ceiling = 400.0 * (1.0 + CTX.max_concession_step)
+    assert per_video <= ceiling + CTX.bundle_money_step   # pinned, allowing rounding
+
+
 def test_accept_never_crosses_walk_away():
     # Regression (screenshot bug): an ask above the walk-away ceiling but
     # inside willingness*accept_margin was accepted ($2,450 over a $2,372
