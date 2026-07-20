@@ -1465,6 +1465,36 @@
   ]
  },
  {
+  "name": "sub_minimum_escalates",
+  "steps": [
+   {
+    "decision": {
+     "action": "escalate_human",
+     "answer_text": null,
+     "deal": null,
+     "ev": null,
+     "non_price_lever": null,
+     "rationale": "This creator's ROI-justified target ($0/video) is below our $250 opening floor \u2014 opening at the floor would run below ROI. A person should decide whether the brand-fit justifies it before we make an offer.",
+     "requires_approval": true,
+     "reserve_deal": null,
+     "reserve_ev": null
+    },
+    "state": {
+     "bundle_offered": false,
+     "creator_first_ask": null,
+     "final_deal": null,
+     "final_total": null,
+     "flat_offer_made": false,
+     "flat_revised": false,
+     "phase": "qa",
+     "questions_answered": 0,
+     "round_count": 0,
+     "status": "escalated"
+    }
+   }
+  ]
+ },
+ {
   "name": "rand_0",
   "steps": [
    {

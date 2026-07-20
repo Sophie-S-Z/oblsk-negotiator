@@ -22,7 +22,8 @@ import random
 import numpy as np
 
 from oblsk_negotiator.ev_engine import (CreatorEconomics, ViewModel, FormatSpec,
-                                        FormatCatalog, deal_to_dict)
+                                        FormatCatalog, deal_to_dict,
+                                        fit_view_model)
 from oblsk_negotiator.rate_card import (RateCard, IG_REEL, IG_STORY, TIKTOK,
                                         YT_SHORT)
 from oblsk_negotiator.behavior_tree import (decide, CreatorMessage, Intent,
@@ -49,6 +50,10 @@ def _vm_for(median: float) -> ViewModel:
 
 VM = _make_vm()
 ECON = CreatorEconomics(conversion_rate=0.0016, ltv_usd=80)
+# A thin, low-conversion creator whose ROI-justified target falls below the
+# opening floor — the shape that used to open at $0/video. Deterministic.
+THIN_VM = fit_view_model([50, 40, 60, 45, 55, 30])
+THIN_ECON = CreatorEconomics(conversion_rate=0.001, ltv_usd=20)
 ECON_MF = CreatorEconomics(conversion_rate=0.001, ltv_usd=50.0)
 
 CATALOG = FormatCatalog({
@@ -129,6 +134,10 @@ def _targeted_scenarios():
          "msgs": [_interested(), _ask(30000)]},
         # a teammate steps into the thread -> pause
         {"name": "human_pause", "human": True, "msgs": [_interested()]},
+        # thin/low-value creator: target below the opening floor -> escalate,
+        # never an opening flat (regression guard for the $0/video bug)
+        {"name": "sub_minimum_escalates", "vm": THIN_VM, "econ": THIN_ECON,
+         "msgs": [_interested()]},
     ]
 
 
@@ -233,9 +242,11 @@ def run_battery():
         card = RATE_CARD if mf else None
         sender = "human" if sc.get("human") else "creator"
         ts = 1e9 if sc.get("human") else 0.0
+        vm = sc.get("vm", VM)
+        econ = sc.get("econ", ECON)
         steps = []
         for msg in sc["msgs"]:
-            decision = decide(msg, state, VM, ECON, CampaignContext(),
+            decision = decide(msg, state, vm, econ, CampaignContext(),
                               brief=brief, catalog=catalog, rate_card=card,
                               thread_last_sender=sender, thread_last_ts=ts)
             steps.append(_step_record(decision, state))

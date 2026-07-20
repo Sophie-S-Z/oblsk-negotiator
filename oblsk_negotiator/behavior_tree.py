@@ -111,12 +111,24 @@ class CampaignContext:
                                                # e.g. "Thursday after 3 PM ET"; the
                                                # agent proposes these, a human runs
                                                # the call
+    # What to do when a creator's ROI-justified target falls below the opening
+    # floor (a thin/low-value creator). "escalate": hand to a person rather than
+    # open at a nonsense number (default). "floor": open at min_offer_usd anyway,
+    # accepting the lower/negative ROI, with the discrepancy shown in the rationale.
+    sub_minimum_policy: str = "escalate"
+
+    def __post_init__(self):
+        if self.sub_minimum_policy not in ("escalate", "floor"):
+            raise ValueError(
+                f"sub_minimum_policy must be 'escalate' or 'floor', "
+                f"got {self.sub_minimum_policy!r}")
 
     def pricing_policy(self) -> PricingPolicy:
         return PricingPolicy(
             roi_target=self.roi_target, roi_min=self.roi_min,
             anchor_factor=self.anchor_factor, cpm_cap_usd=self.cpm_cap_usd,
-            risk_discount=self.risk_discount, min_offer_usd=self.min_offer_usd)
+            risk_discount=self.risk_discount, min_offer_usd=self.min_offer_usd,
+            sub_minimum_floor=(self.sub_minimum_policy == "floor"))
 
 
 class Action(str, Enum):
@@ -205,6 +217,12 @@ def _ladder(vm: ViewModel, econ: CreatorEconomics,
 def _flat_total(vm, econ, ctx) -> float:
     """The opening flat: the ladder's anchor, rounded to a clean number."""
     lad = _ladder(vm, econ, ctx)
+    if (ctx.sub_minimum_policy == "floor"
+            and lad.anchor >= ctx.min_offer_usd > lad.walk_away):
+        # Floor mode with the floor above the walk-away: honor the minimum even
+        # though the p10 downside can't clear it (a deliberate, human-visible
+        # ROI-negative open). Round without the walk-away cap.
+        return _round_money(lad.anchor, ctx.money_step)
     return _round_money_capped(lad.anchor, ctx.money_step, lad.walk_away)
 
 
@@ -323,6 +341,17 @@ def decide(msg: CreatorMessage,
 # ---- nodes ------------------------------------------------------------------
 
 def _opening_flat(state, vm, econ, ctx, *, reason: str) -> Decision:
+    lad = _ladder(vm, econ, ctx)
+    if ctx.sub_minimum_policy == "escalate" and lad.target < ctx.min_offer_usd:
+        # The ROI-justified target is below our opening floor: opening at a
+        # credible number would break ROI. A person decides whether brand-fit
+        # justifies paying the floor. (Every path to an opening comes through
+        # here, so this covers the budget-question and qa-threshold routes too.)
+        return _escalate_human(state, vm, econ, ctx, None, reason=(
+            f"This creator's ROI-justified target (${lad.target:,.0f}/video) is "
+            f"below our ${ctx.min_offer_usd:,.0f} opening floor — opening at the "
+            f"floor would run below ROI. A person should decide whether the "
+            f"brand-fit justifies it before we make an offer."))
     deal = flat_offer(_flat_total(vm, econ, ctx), video_count=1)
     ev = _score(deal, vm, econ, seed=3)
 

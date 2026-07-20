@@ -43,6 +43,10 @@ class PricingPolicy:
     risk_discount: float = 1.0     # authenticity multiplier applied to the downside
     winsor_q: float = 0.90         # cap simulated revenue draws at this quantile
     min_offer_usd: float = 250.0   # never open below this, even for tiny creators
+    # When target < min_offer_usd (a thin/low-value creator), let the anchor
+    # hold at the floor instead of collapsing to target. Off by default: the
+    # tree escalates that case to a person rather than opening below-ROI.
+    sub_minimum_floor: bool = False
 
 
 @dataclass(frozen=True)
@@ -136,7 +140,12 @@ def price_ladder(vm: ViewModel,
 
     walk_away = max(0.0, min(fee_from_downside, fee_from_cpm))
     target = max(0.0, min(fee_from_target, walk_away))
-    anchor = min(max(policy.anchor_factor * target, policy.min_offer_usd), target)
+    floored = max(policy.anchor_factor * target, policy.min_offer_usd)
+    # Normally the anchor is capped at target, so it never exceeds the aim. But
+    # that cap silently defeats the min_offer_usd floor when target < min_offer
+    # (a thin creator): the anchor collapses toward $0. In sub_minimum_floor
+    # mode we let the floor hold instead; otherwise the tree escalates that case.
+    anchor = floored if policy.sub_minimum_floor else min(floored, target)
     binding = "downside-ROI" if fee_from_downside <= fee_from_cpm else "CPM-cap"
 
     return PriceLadder(

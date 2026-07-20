@@ -285,6 +285,40 @@ def test_ladder_orders_and_reproduces():
     assert again.target == lad.target and again.walk_away == lad.walk_away
 
 
+# A thin, low-conversion creator whose ROI-justified target falls below the
+# opening floor — the exact shape that used to open at $0/video.
+_THIN_VM = fit_view_model([50, 40, 60, 45, 55, 30])
+_THIN_ECON = CreatorEconomics(conversion_rate=0.001, ltv_usd=20)
+
+
+def test_sub_minimum_escalates_by_default_never_opens_at_zero():
+    from oblsk_negotiator.behavior_tree import _ladder
+    lad = _ladder(_THIN_VM, _THIN_ECON, CTX)
+    assert lad.target < CTX.min_offer_usd            # precondition: thin creator
+    s = NegotiationState("c", "k", "t")
+    d = decide(CreatorMessage(Intent.INTERESTED, raw_text="sounds interesting"),
+               s, _THIN_VM, _THIN_ECON, CTX)
+    assert d.action == Action.ESCALATE_HUMAN
+    assert "floor" in (s.escalation_reason or "").lower()
+    # The bug symptom — a $0 opening flat — is never produced.
+    assert d.action != Action.OPENING_FLAT
+
+
+def test_sub_minimum_floor_mode_opens_at_least_at_the_floor():
+    ctx = CampaignContext(sub_minimum_policy="floor")
+    s = NegotiationState("c", "k", "t")
+    d = decide(CreatorMessage(Intent.INTERESTED, raw_text="sounds interesting"),
+               s, _THIN_VM, _THIN_ECON, ctx)
+    assert d.action == Action.OPENING_FLAT
+    assert d.deal.total_usd >= ctx.min_offer_usd     # the floor actually holds
+
+
+def test_sub_minimum_policy_validated():
+    import pytest
+    with pytest.raises(ValueError):
+        CampaignContext(sub_minimum_policy="nonsense")
+
+
 def test_ladder_cpm_cap_binds():
     from oblsk_negotiator.pricing import PricingPolicy
     tight = PricingPolicy(cpm_cap_usd=1.0)   # $1 per 1,000 views: far below ROI room
