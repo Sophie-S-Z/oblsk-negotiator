@@ -152,19 +152,37 @@ def write_message(decision: Decision, creator_name: str = "there",
     draft = llm.complete(prompt["system"], prompt["user"], max_tokens=400)
     if draft and _numbers_intact(decision, draft):
         return draft.strip()
-    return render_template(decision, creator_name=creator_name, seed=seed)
+    # Fell back to the deterministic English template. If the thread needs
+    # another language, the template can't produce it — flag it for the human
+    # reviewer (who sends every message anyway) rather than shipping English
+    # silently.
+    message = render_template(decision, creator_name=creator_name, seed=seed)
+    if language and language.lower() != "english":
+        message = (f"[Draft is in English — the writer was unavailable; please "
+                   f"translate to {language} before sending.]\n\n{message}")
+    return message
 
 
 def _numbers_intact(decision: Decision, draft: str) -> bool:
     """True when the draft states the deal total (and per-video rate for a
-    multi-video flat deal). Guards against a reworded offer losing its price."""
+    multi-video flat deal). Guards against a reworded offer losing its price.
+    Compares on digits only, so a localized number ("$2.000", "2 000", "2000
+    dólares") still counts — otherwise a good non-English draft would be
+    discarded for not matching the exact "$2,000" string."""
     d = decision.deal
     if d is None or decision.action == Action.PROPOSE_CALL:
         return True   # a call proposal need not restate the standing offer
     required = [d.total_usd]
     if not isinstance(d, Bundle) and d.video_count > 1:
         required.append(d.flat_per_video)
-    return all(_money(x) in draft for x in required)
+    draft_digits = _digits(draft)
+    return all(_digits(_money(x)) in draft_digits for x in required)
+
+
+def _digits(s: str) -> str:
+    """Just the digit characters, so number comparisons ignore currency symbols
+    and thousands/decimal separators that vary by locale."""
+    return "".join(ch for ch in s if ch.isdigit())
 
 
 def build_llm_prompt(decision: Decision, creator_name: str,

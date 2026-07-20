@@ -11,10 +11,20 @@ route to the offer instead.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import Optional
 
 from . import llm
+
+# A drafted answer must never quote a rate. Catch a leaked amount across
+# currencies/locales, not just "$": any currency symbol, or a number followed by
+# a money word (dollars/euros/reais/…). Budget questions route to the offer path
+# upstream, so this is defense-in-depth against the model leaking a figure.
+_MONEY_LEAK_RE = re.compile(
+    r"[$€£¥₹]|R\$|\d[\d.,]*\s?(?:dollars?|dólares?|euros?|reais|libras?|pesos?|"
+    r"usd|eur|gbp|k\b|mil\b)",
+    re.IGNORECASE)
 
 
 @dataclass
@@ -159,7 +169,7 @@ def answer_question(question: str, brief: CampaignBrief,
         return answer_from_brief(question, brief)
     prompt = build_qa_llm_prompt(question, brief, thread_history, language=language)
     draft = llm.complete(prompt["system"], prompt["user"], max_tokens=300)
-    if draft and "$" not in draft:
+    if draft and not _MONEY_LEAK_RE.search(draft):
         return draft.strip()
     return answer_from_brief(question, brief)
 

@@ -21,7 +21,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from . import llm
-from .behavior_tree import Action, CampaignContext, decide
+from .behavior_tree import Action, CampaignContext, decide, resolve_reply_language
 from .ev_engine import CreatorEconomics, ViewModel
 from .prose import write_message
 from .qa import CampaignBrief
@@ -102,7 +102,9 @@ def spar(vm: ViewModel,
         msg = interpret_message(manager_text)
         decision = decide(msg, state, vm, econ, ctx, brief=brief)
         agent_text = write_message(decision, creator_name=creator_name,
-                                   thread_history=_history(result.turns))
+                                   thread_history=_history(result.turns),
+                                   language=resolve_reply_language(brief, msg),
+                                   voice_template=getattr(brief, "voice_template", None))
         result.turns.append(Turn("us", agent_text))
         result.decisions.append(decision)
         if decision.action in _TERMINAL:

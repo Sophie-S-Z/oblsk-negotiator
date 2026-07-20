@@ -1,11 +1,14 @@
 """
 The loop, the approval gate, and the metrics.
 
-Every message the agent wants to send is a proposal. When it needs approval, the
-runner calls an approver (a stand-in for the human reviewer) which approves or
-rejects it. Approved messages go out; a rejected one does not, and the thread is
-handed to a person. Swap the approver for always_approve, or put the campaign in
-autonomous mode, and the human comes out of the loop with no other change.
+Every message the agent wants to send is a proposal. The runner calls an approver
+(a stand-in for the human reviewer) which approves or rejects it. Approved
+messages go out; a rejected one does not, and the thread is handed to a person.
+
+Note: every creator-facing message now requires human approval before sending
+(see behavior_tree._requires_approval), so the `autonomy` level no longer takes
+the human out of the loop — it is retained only for state serialization. Swap the
+approver for always_approve to simulate a reviewer who accepts every draft.
 """
 
 from __future__ import annotations
@@ -19,7 +22,8 @@ import numpy as np
 from .ev_engine import (CreatorEconomics, ViewModel, ev_distribution, ev_bundle,
                         Deal, Bundle, FormatCatalog, deal_from_dict)
 from .state import NegotiationState, Status, AutonomyLevel
-from .behavior_tree import decide, Intent, CampaignContext, Decision, Action
+from .behavior_tree import (decide, Intent, CampaignContext, Decision, Action,
+                            resolve_reply_language)
 from .creator_sim import SimCreator
 from .prose import write_message
 from .qa import CampaignBrief
@@ -172,7 +176,9 @@ def run_negotiation(vm: ViewModel,
 
         email = write_message(decision, creator_name=creator_name,
                               thread_history=_history(transcript),
-                              seed=thread_seed + state.round_count)
+                              seed=thread_seed + state.round_count,
+                              language=resolve_reply_language(brief, msg),
+                              voice_template=brief.voice_template)
         transcript.append(TurnLog("agent", decision.action.value, total, email))
         log.append(SENT, action=decision.action.value, total=total)
         if verbose:
@@ -216,7 +222,9 @@ def run_negotiation(vm: ViewModel,
             transcript.append(TurnLog("agent", decision.action.value, total,
                                       write_message(decision, creator_name,
                                                     thread_history=_history(transcript),
-                                                    seed=thread_seed + state.round_count)))
+                                                    seed=thread_seed + state.round_count,
+                                                    language=resolve_reply_language(brief, msg),
+                                                    voice_template=brief.voice_template)))
             log.append(SENT, action=decision.action.value, total=total)
             if verbose:
                 print(f"\nAGENT [{decision.action.value}]: locking terms.")
@@ -240,9 +248,13 @@ def run_negotiation(vm: ViewModel,
                 ev = ev_distribution(vm, d, econ, n_samples=8000, seed=99)
             final_net, final_roi = ev.net_mean, ev.roi_mean
 
+    # "Autonomous" now means the agent drove the thread to a close with no human
+    # approval requested — which, since every outbound message requires approval,
+    # is only true for a thread that closed without the agent sending anything
+    # (i.e. the creator accepted standing terms and no further draft went out).
+    # It no longer keys off the retired dollar ceiling.
     runs_autonomously = (state.status == Status.ACCEPTED and
-                         final_total is not None and
-                         final_total <= ctx.auto_send_dollar_ceiling and
+                         approvals_requested == 0 and
                          not human_rejected)
 
     return NegotiationOutcome(
