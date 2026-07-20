@@ -39,7 +39,7 @@ from .bundles import (flat_offer, bundle_from_flat, add_non_price_sweetener,
                       compose_bundle, bundle_format_summary)
 from .pricing import PricingPolicy, PriceLadder, price_ladder
 from .rate_card import RateCard
-from .state import NegotiationState, Status, Phase, AutonomyLevel
+from .state import NegotiationState, Status, Phase
 from .qa import (CampaignBrief, answer_question, can_answer,
                 classify_question_topic, forward_nudge)
 
@@ -79,7 +79,10 @@ class CreatorMessage:
 class CampaignContext:
     """Per-campaign knobs. Every number the negotiator uses lives here, so a
     campaign tunes its stance in config instead of editing pricing code."""
-    auto_send_dollar_ceiling: float = 3000.0  # above this, a person signs off
+    # Deprecated/inert: every creator-facing draft now requires human send
+    # (see _requires_approval), so this no longer gates anything. Retained so
+    # existing campaign YAML that sets it still loads.
+    auto_send_dollar_ceiling: float = 3000.0
 
     # The pricing ladder (see pricing.py): where we open, aim, and stop.
     roi_target: float = 3.0                    # revenue/cost multiple we aim for
@@ -160,13 +163,17 @@ def resolve_reply_language(brief, msg) -> str:
 
 def _requires_approval(action: Action, total: Optional[float],
                        state: NegotiationState, ctx: CampaignContext) -> bool:
-    if action == Action.ESCALATE_HUMAN:
-        return True
-    if action not in _OUTBOUND:
-        return False
-    if state.autonomy_level == AutonomyLevel.HUMAN_APPROVAL:
-        return True
-    return total is not None and total > ctx.auto_send_dollar_ceiling
+    """Every creator-facing draft is human-sent — nothing the agent writes goes
+    out until a person clicks send. So all outbound actions (and ESCALATE_HUMAN)
+    require approval regardless of autonomy level or dollar total; only the
+    internal moves (ASK_HUMAN, PAUSE_HUMAN, which draft nothing for the creator)
+    proceed on their own.
+
+    `total`, `state`, and `ctx` no longer gate the decision — they are kept in
+    the signature so the handler call sites stay unchanged. `AutonomyLevel` and
+    `ctx.auto_send_dollar_ceiling` are retained for serialization/config
+    compatibility but no longer influence sending."""
+    return action in _OUTBOUND or action == Action.ESCALATE_HUMAN
 
 
 # ---- valuation: read the calculator, decide what we will pay ----------------

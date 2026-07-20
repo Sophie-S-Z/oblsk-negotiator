@@ -1489,7 +1489,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (engaged, no number yet). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -1542,7 +1542,7 @@
      },
      "non_price_lever": null,
      "rationale": "Flat rejected (the flat rate). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 2160.0,
@@ -1581,7 +1581,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about deliverables. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -1694,7 +1694,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about timeline. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -1774,7 +1774,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about timeline. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -1813,7 +1813,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -1877,7 +1877,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Creator accepted. Lock terms and hand to execution.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -1924,7 +1924,7 @@
      },
      "non_price_lever": null,
      "rationale": "Flat rejected (the flat rate). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 2160.0,
@@ -2073,7 +2073,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -2156,7 +2156,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (engaged, no number yet). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -2220,7 +2220,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Creator accepted. Lock terms and hand to execution.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -2267,7 +2267,7 @@
      },
      "non_price_lever": null,
      "rationale": "No new ask in their message. Hold $1,500 on the table and keep the thread warm; concede nothing without a counter.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -2314,7 +2314,7 @@
      },
      "non_price_lever": null,
      "rationale": "Accept $1,800 across 1 video(s) ($1,800/video) \u2014 within our $2,526/video ceiling, ROI 4.3x.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -2347,7 +2347,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Creator accepted. Lock terms and hand to execution.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -2424,7 +2424,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -2618,7 +2618,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (engaged, no number yet). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -2671,7 +2671,7 @@
      },
      "non_price_lever": null,
      "rationale": "No new ask in their message. Hold $1,500 on the table and keep the thread warm; concede nothing without a counter.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -2715,7 +2715,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -2768,7 +2768,7 @@
      },
      "non_price_lever": null,
      "rationale": "Flat rejected (the flat rate). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 2160.0,
@@ -2895,7 +2895,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (engaged, no number yet). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -2948,7 +2948,7 @@
      },
      "non_price_lever": null,
      "rationale": "Flat rejected (the flat rate). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 2160.0,
@@ -3017,7 +3017,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about deliverables. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -3056,7 +3056,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -3095,7 +3095,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Creator accepted. Lock terms and hand to execution.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -3142,7 +3142,7 @@
      },
      "non_price_lever": null,
      "rationale": "Flat rejected ($9,000). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 2160.0,
@@ -3189,7 +3189,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Creator accepted. Lock terms and hand to execution.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -3289,7 +3289,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about deliverables. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -3314,7 +3314,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about usage_rights. Answer from the brief and nudge toward the next step (answered 2).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -3378,7 +3378,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (several questions answered, time for a number). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -3436,7 +3436,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -3489,7 +3489,7 @@
      },
      "non_price_lever": null,
      "rationale": "Flat rejected (the flat rate). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 2160.0,
@@ -3755,7 +3755,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about timeline. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -3844,7 +3844,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -3927,7 +3927,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -3985,7 +3985,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -4038,7 +4038,7 @@
      },
      "non_price_lever": null,
      "rationale": "No new ask in their message. Hold $1,500 on the table and keep the thread warm; concede nothing without a counter.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -4063,7 +4063,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about timeline. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -4102,7 +4102,7 @@
      },
      "non_price_lever": null,
      "rationale": "No new ask in their message. Hold $1,500 on the table and keep the thread warm; concede nothing without a counter.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -4215,7 +4215,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about timeline. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -4279,7 +4279,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -4591,7 +4591,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (engaged, no number yet). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -5150,7 +5150,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -5208,7 +5208,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -5247,7 +5247,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Creator accepted. Lock terms and hand to execution.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -5280,7 +5280,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about timeline. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -5550,7 +5550,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -5589,7 +5589,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Creator accepted. Lock terms and hand to execution.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -5636,7 +5636,7 @@
      },
      "non_price_lever": null,
      "rationale": "Flat rejected ($3,200). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 2160.0,
@@ -5697,7 +5697,7 @@
      },
      "non_price_lever": null,
      "rationale": "No new ask in their message. Hold $2,400 on the table and keep the thread warm; concede nothing without a counter.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -6770,7 +6770,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (engaged, no number yet). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -6809,7 +6809,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Creator accepted. Lock terms and hand to execution.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -6842,7 +6842,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Creator accepted. Lock terms and hand to execution.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -6889,7 +6889,7 @@
      },
      "non_price_lever": null,
      "rationale": "Flat rejected (the flat rate). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 2160.0,
@@ -6950,7 +6950,7 @@
      },
      "non_price_lever": null,
      "rationale": "Accept $2,400 across 1 video(s) ($2,400/video) \u2014 within our $2,958/video ceiling, ROI 3.2x.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -6983,7 +6983,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about deliverables. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -7274,7 +7274,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (engaged, no number yet). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -7313,7 +7313,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Creator accepted. Lock terms and hand to execution.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -7440,7 +7440,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about exclusivity. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -7492,7 +7492,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -7531,7 +7531,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Creator accepted. Lock terms and hand to execution.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -7578,7 +7578,7 @@
      },
      "non_price_lever": null,
      "rationale": "Flat rejected (the flat rate). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 2160.0,
@@ -7625,7 +7625,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Creator accepted. Lock terms and hand to execution.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -7677,7 +7677,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -7716,7 +7716,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Creator accepted. Lock terms and hand to execution.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -7939,7 +7939,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -8003,7 +8003,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about usage_rights. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -8028,7 +8028,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Creator accepted. Lock terms and hand to execution.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -8831,7 +8831,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (engaged, no number yet). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -8870,7 +8870,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about creative_freedom. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -8909,7 +8909,7 @@
      },
      "non_price_lever": null,
      "rationale": "Flat rejected (the flat rate). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 2160.0,
@@ -8962,7 +8962,7 @@
      },
      "non_price_lever": null,
      "rationale": "No new ask in their message. Hold $2,400 on the table and keep the thread warm; concede nothing without a counter.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -9006,7 +9006,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (engaged, no number yet). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -9059,7 +9059,7 @@
      },
      "non_price_lever": null,
      "rationale": "Flat rejected (the flat rate). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 2160.0,
@@ -9523,7 +9523,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (engaged, no number yet). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -9606,7 +9606,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -9664,7 +9664,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -9717,7 +9717,7 @@
      },
      "non_price_lever": null,
      "rationale": "Flat rejected (the flat rate). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 2160.0,
@@ -9770,7 +9770,7 @@
      },
      "non_price_lever": null,
      "rationale": "Accept $1,800 across 2 video(s) ($900/video) \u2014 within our $2,958/video ceiling, ROI 8.6x.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -9803,7 +9803,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about deliverables. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -9850,7 +9850,7 @@
      },
      "non_price_lever": null,
      "rationale": "No new ask in their message. Hold $1,800 on the table and keep the thread warm; concede nothing without a counter.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -10383,7 +10383,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (engaged, no number yet). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -10475,7 +10475,7 @@
      },
      "non_price_lever": null,
      "rationale": "Accept $1,200 across 1 video(s) ($1,200/video) \u2014 within our $2,526/video ceiling, ROI 6.5x.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -10508,7 +10508,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about exclusivity. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -10541,7 +10541,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Creator accepted. Lock terms and hand to execution.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -10593,7 +10593,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -10646,7 +10646,7 @@
      },
      "non_price_lever": null,
      "rationale": "Flat rejected (the flat rate). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 2160.0,
@@ -10690,7 +10690,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about exclusivity. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -10779,7 +10779,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -11623,7 +11623,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (engaged, no number yet). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -11676,7 +11676,7 @@
      },
      "non_price_lever": null,
      "rationale": "No new ask in their message. Hold $1,500 on the table and keep the thread warm; concede nothing without a counter.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -11701,7 +11701,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Creator accepted. Lock terms and hand to execution.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -11734,7 +11734,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about deliverables. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -11781,7 +11781,7 @@
      },
      "non_price_lever": null,
      "rationale": "Accept $1,800 across 1 video(s) ($1,800/video) \u2014 within our $2,526/video ceiling, ROI 4.3x.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -11863,7 +11863,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (engaged, no number yet). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -11927,7 +11927,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Creator accepted. Lock terms and hand to execution.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -12115,7 +12115,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (engaged, no number yet). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -12168,7 +12168,7 @@
      },
      "non_price_lever": null,
      "rationale": "Accept $2,400 across 1 video(s) ($2,400/video) \u2014 within our $2,526/video ceiling, ROI 3.2x.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -12201,7 +12201,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Creator accepted. Lock terms and hand to execution.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -12248,7 +12248,7 @@
      },
      "non_price_lever": null,
      "rationale": "Flat rejected (the flat rate). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 2160.0,
@@ -12295,7 +12295,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Creator accepted. Lock terms and hand to execution.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -13013,7 +13013,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -13066,7 +13066,7 @@
      },
      "non_price_lever": null,
      "rationale": "No new ask in their message. Hold $1,500 on the table and keep the thread warm; concede nothing without a counter.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -13105,7 +13105,7 @@
      },
      "non_price_lever": null,
      "rationale": "No new ask in their message. Hold $1,500 on the table and keep the thread warm; concede nothing without a counter.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -13144,7 +13144,7 @@
      },
      "non_price_lever": null,
      "rationale": "No new ask in their message. Hold $1,500 on the table and keep the thread warm; concede nothing without a counter.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -13183,7 +13183,7 @@
      },
      "non_price_lever": null,
      "rationale": "Flat rejected (the flat rate). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 2160.0,
@@ -13853,7 +13853,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -13906,7 +13906,7 @@
      },
      "non_price_lever": null,
      "rationale": "No new ask in their message. Hold $1,500 on the table and keep the thread warm; concede nothing without a counter.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -13956,7 +13956,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about timeline. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -14000,7 +14000,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -14039,7 +14039,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about exclusivity. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -14235,7 +14235,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (engaged, no number yet). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -14288,7 +14288,7 @@
      },
      "non_price_lever": null,
      "rationale": "Flat rejected (the flat rate). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 2160.0,
@@ -14366,7 +14366,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about deliverables. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -14405,7 +14405,7 @@
      },
      "non_price_lever": null,
      "rationale": "Accept $1,200 across 2 video(s) ($600/video) \u2014 within our $2,958/video ceiling, ROI 12.9x.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -15017,7 +15017,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about deliverables. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -15106,7 +15106,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -15159,7 +15159,7 @@
      },
      "non_price_lever": null,
      "rationale": "No new ask in their message. Hold $1,500 on the table and keep the thread warm; concede nothing without a counter.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -15242,7 +15242,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (engaged, no number yet). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -15295,7 +15295,7 @@
      },
      "non_price_lever": null,
      "rationale": "No new ask in their message. Hold $1,500 on the table and keep the thread warm; concede nothing without a counter.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -15334,7 +15334,7 @@
      },
      "non_price_lever": null,
      "rationale": "Flat rejected (the flat rate). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 2160.0,
@@ -15464,7 +15464,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -15542,7 +15542,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about timeline. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -15581,7 +15581,7 @@
      },
      "non_price_lever": null,
      "rationale": "No new ask in their message. Hold $1,500 on the table and keep the thread warm; concede nothing without a counter.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -15606,7 +15606,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about timeline. Answer from the brief and nudge toward the next step (answered 2).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -15631,7 +15631,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Creator accepted. Lock terms and hand to execution.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -15683,7 +15683,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -15736,7 +15736,7 @@
      },
      "non_price_lever": null,
      "rationale": "No new ask in their message. Hold $1,500 on the table and keep the thread warm; concede nothing without a counter.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -15775,7 +15775,7 @@
      },
      "non_price_lever": null,
      "rationale": "Flat rejected (the flat rate). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 2160.0,
@@ -15872,7 +15872,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (engaged, no number yet). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -15911,7 +15911,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about timeline. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -15955,7 +15955,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -16013,7 +16013,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (engaged, no number yet). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -16052,7 +16052,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about exclusivity. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -16091,7 +16091,7 @@
      },
      "non_price_lever": null,
      "rationale": "Flat rejected (the flat rate). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 2160.0,
@@ -16731,7 +16731,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (engaged, no number yet). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -16770,7 +16770,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about timeline. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -16809,7 +16809,7 @@
      },
      "non_price_lever": null,
      "rationale": "No new ask in their message. Hold $1,500 on the table and keep the thread warm; concede nothing without a counter.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -16839,7 +16839,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about deliverables. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -16914,7 +16914,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about deliverables. Answer from the brief and nudge toward the next step (answered 2).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -16953,7 +16953,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (engaged, no number yet). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -17006,7 +17006,7 @@
      },
      "non_price_lever": null,
      "rationale": "No new ask in their message. Hold $1,500 on the table and keep the thread warm; concede nothing without a counter.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -17050,7 +17050,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -17580,7 +17580,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about deliverables. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -17619,7 +17619,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (engaged, no number yet). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -17672,7 +17672,7 @@
      },
      "non_price_lever": null,
      "rationale": "Flat rejected (the flat rate). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 2160.0,
@@ -17741,7 +17741,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about usage_rights. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -17780,7 +17780,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (engaged, no number yet). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -17833,7 +17833,7 @@
      },
      "non_price_lever": null,
      "rationale": "Flat rejected (the flat rate). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 2160.0,
@@ -17919,7 +17919,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about exclusivity. Answer from the brief and nudge toward the next step (answered 2).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -17971,7 +17971,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -18010,7 +18010,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about deliverables. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -18088,7 +18088,7 @@
      },
      "non_price_lever": null,
      "rationale": "No new ask in their message. Hold $1,500 on the table and keep the thread warm; concede nothing without a counter.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -18293,7 +18293,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -18406,7 +18406,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -18450,7 +18450,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about timeline. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -18514,7 +18514,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (engaged, no number yet). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -18567,7 +18567,7 @@
      },
      "non_price_lever": null,
      "rationale": "Flat rejected (the flat rate). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 2160.0,
@@ -18683,7 +18683,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -18736,7 +18736,7 @@
      },
      "non_price_lever": null,
      "rationale": "No new ask in their message. Hold $1,500 on the table and keep the thread warm; concede nothing without a counter.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -18775,7 +18775,7 @@
      },
      "non_price_lever": null,
      "rationale": "Flat rejected ($3,200). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 2160.0,
@@ -18814,7 +18814,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Creator accepted. Lock terms and hand to execution.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -18909,7 +18909,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about usage_rights. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -19727,7 +19727,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -19780,7 +19780,7 @@
      },
      "non_price_lever": null,
      "rationale": "Accept $1,200 across 2 video(s) ($600/video) \u2014 within our $2,526/video ceiling, ROI 12.9x.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -19860,7 +19860,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about exclusivity. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -19931,7 +19931,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about deliverables. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -19970,7 +19970,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (engaged, no number yet). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -20009,7 +20009,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about creative_freedom. Answer from the brief and nudge toward the next step (answered 2).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -20048,7 +20048,7 @@
      },
      "non_price_lever": null,
      "rationale": "Flat rejected (the flat rate). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 2160.0,
@@ -20170,7 +20170,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (engaged, no number yet). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -20209,7 +20209,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about deliverables. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -20248,7 +20248,7 @@
      },
      "non_price_lever": null,
      "rationale": "Accept $2,400 across 1 video(s) ($2,400/video) \u2014 within our $2,526/video ceiling, ROI 3.2x.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -20295,7 +20295,7 @@
      },
      "non_price_lever": null,
      "rationale": "Flat rejected ($9,000). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 2160.0,
@@ -21319,7 +21319,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -21358,7 +21358,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about creative_freedom. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -21402,7 +21402,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -21441,7 +21441,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Creator accepted. Lock terms and hand to execution.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -21509,7 +21509,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about creative_freedom. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -21636,7 +21636,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (engaged, no number yet). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -22175,7 +22175,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -22219,7 +22219,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about deliverables. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -22258,7 +22258,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -24011,7 +24011,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (engaged, no number yet). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -24064,7 +24064,7 @@
      },
      "non_price_lever": null,
      "rationale": "Flat rejected (the flat rate). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 2160.0,
@@ -24117,7 +24117,7 @@
      },
      "non_price_lever": null,
      "rationale": "Accept $1,800 across 1 video(s) ($1,800/video) \u2014 within our $2,958/video ceiling, ROI 4.3x.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -24164,7 +24164,7 @@
      },
      "non_price_lever": null,
      "rationale": "No new ask in their message. Hold $1,800 on the table and keep the thread warm; concede nothing without a counter.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -24211,7 +24211,7 @@
      },
      "non_price_lever": null,
      "rationale": "No new ask in their message. Hold $1,800 on the table and keep the thread warm; concede nothing without a counter.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -24249,7 +24249,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about exclusivity. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -24288,7 +24288,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -24327,7 +24327,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Creator accepted. Lock terms and hand to execution.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -24374,7 +24374,7 @@
      },
      "non_price_lever": null,
      "rationale": "Flat rejected (the flat rate). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 2160.0,
@@ -24421,7 +24421,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Creator accepted. Lock terms and hand to execution.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -24609,7 +24609,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (opening the deal). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -24662,7 +24662,7 @@
      },
      "non_price_lever": null,
      "rationale": "Flat rejected (the flat rate). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 2160.0,
@@ -24715,7 +24715,7 @@
      },
      "non_price_lever": null,
      "rationale": "No new ask in their message. Hold $2,400 on the table and keep the thread warm; concede nothing without a counter.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -24740,7 +24740,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Question about deliverables. Answer from the brief and nudge toward the next step (answered 1).",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },
@@ -24809,7 +24809,7 @@
      },
      "non_price_lever": null,
      "rationale": "Open with one flat number, $1,500 for a single video (engaged, no number yet). ROI 5.1x. If rejected, go to a 3-video bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 1350.0,
@@ -24862,7 +24862,7 @@
      },
      "non_price_lever": null,
      "rationale": "Flat rejected (the flat rate). Hold the single video but revise up to $2,400 \u2014 our target rung (ROI 3.2x); the walk-away ceiling is never offered. If rejected again, restructure into a bundle.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": {
       "deposit_upfront_pct": 0.0,
       "flat_per_video": 2160.0,
@@ -24901,7 +24901,7 @@
      "ev": null,
      "non_price_lever": null,
      "rationale": "Creator accepted. Lock terms and hand to execution.",
-     "requires_approval": false,
+     "requires_approval": true,
      "reserve_deal": null,
      "reserve_ev": null
     },

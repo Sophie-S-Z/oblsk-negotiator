@@ -21,7 +21,7 @@ from oblsk_negotiator.qa import (CampaignBrief, classify_question_topic,
                                 answer_from_brief, signals_ready_for_offer,
                                 can_answer)
 from oblsk_negotiator.creator_sim import SimCreator
-from oblsk_negotiator.prose import render_template
+from oblsk_negotiator.prose import render_template, write_message
 from oblsk_negotiator.runner import run_negotiation, reject_action
 
 ECON = CreatorEconomics(conversion_rate=0.0016, ltv_usd=80)
@@ -319,9 +319,30 @@ def test_approval_required_in_human_mode():
     assert decide(CreatorMessage(Intent.INTERESTED), s, VM, ECON, CTX).requires_approval
 
 
-def test_autonomous_small_deal_no_approval():
+def test_all_outbound_drafts_require_human_send():
+    """No creator-facing text ever auto-sends: every outbound action (and
+    ESCALATE_HUMAN) requires approval regardless of autonomy level or total;
+    only the internal ASK_HUMAN/PAUSE_HUMAN moves proceed on their own."""
+    outbound = [Action.ANSWER_QUESTION, Action.OPENING_FLAT, Action.ESCALATE_BUNDLE,
+                Action.ADD_SWEETENER, Action.HOLD_FIRM, Action.PROPOSE_CALL,
+                Action.ACCEPT, Action.SOFT_CLOSE]
+    for level in (AutonomyLevel.HUMAN_APPROVAL, AutonomyLevel.AUTONOMOUS):
+        s = NegotiationState("c", "k", "t", autonomy_level=level)
+        for action in outbound:
+            for total in (None, 50, 1500, 10_000_000):
+                assert _requires_approval(action, total, s, CTX) is True, (action, total, level)
+        assert _requires_approval(Action.ESCALATE_HUMAN, None, s, CTX) is True
+        assert _requires_approval(Action.ASK_HUMAN, None, s, CTX) is False
+        assert _requires_approval(Action.PAUSE_HUMAN, None, s, CTX) is False
+
+
+def test_outbound_decision_still_carries_a_draft():
+    """The human gets a pre-filled box, not an empty one: an auto-mode opening
+    still produces both a draft and requires_approval=True."""
     s = NegotiationState("c", "k", "t", autonomy_level=AutonomyLevel.AUTONOMOUS)
-    assert _requires_approval(Action.OPENING_FLAT, 1500, s, CTX) is False
+    d = decide(CreatorMessage(Intent.INTERESTED, raw_text="interested"), s, VM, ECON, CTX)
+    assert d.action == Action.OPENING_FLAT and d.requires_approval is True
+    assert len(write_message(d, creator_name="Ana")) > 0
 
 
 def test_human_rejection_escalates():
@@ -347,11 +368,15 @@ def test_e2e_creators_close_or_escalate():
                 assert o.discount_from_ask >= -0.01
 
 
-def test_autonomous_closes_without_approvals():
+def test_autonomous_still_requests_approval_on_every_draft():
+    # The autonomy level no longer bypasses sending: even in AUTONOMOUS mode
+    # every creator-facing draft is put up for human approval before it goes
+    # out. It still closes (the approver here approves), but approvals are
+    # requested rather than skipped.
     o = run_negotiation(VM, ECON, CTX, _sim(floor=1700, counter=0.7, bulk=0.08,
                                             max_videos=5, seed=1),
                         autonomy=AutonomyLevel.AUTONOMOUS)
-    assert o.status == "accepted" and o.approvals_requested == 0
+    assert o.status == "accepted" and o.approvals_requested > 0
 
 
 def test_composed_bundle_accept_above_singleformat_walkaway():
