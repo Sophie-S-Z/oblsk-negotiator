@@ -332,6 +332,24 @@ def test_sub_minimum_floor_mode_opens_at_least_at_the_floor():
     assert d.deal.total_usd >= ctx.min_offer_usd     # the floor actually holds
 
 
+def test_floor_mode_bundle_never_undercuts_the_opening_floor():
+    # Regression: floor mode opened at the min_offer floor but then a rejected
+    # flat escalated to a *cheaper* bundle (priced off the tiny target), undercutting
+    # our own opening. The bundle per-video must stay at/above the floor.
+    ctx = CampaignContext(sub_minimum_policy="floor")
+    s = NegotiationState("c", "k", "t")
+    d0 = decide(CreatorMessage(Intent.INTERESTED), s, _THIN_VM, _THIN_ECON, ctx)
+    open_pv = d0.deal.total_usd / d0.deal.video_count
+    d1 = decide(CreatorMessage(Intent.REJECTING, raw_text="too low"),
+                s, _THIN_VM, _THIN_ECON, ctx)     # revised flat
+    d2 = decide(CreatorMessage(Intent.REJECTING, raw_text="still too low"),
+                s, _THIN_VM, _THIN_ECON, ctx)     # bundle
+    for d in (d1, d2):
+        if d.deal is not None:
+            assert d.deal.total_usd / d.deal.video_count >= ctx.min_offer_usd - 1
+    assert open_pv >= ctx.min_offer_usd - 1
+
+
 def test_sub_minimum_policy_validated():
     import pytest
     with pytest.raises(ValueError):

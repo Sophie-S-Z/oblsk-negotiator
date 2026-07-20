@@ -252,25 +252,39 @@ def _revised_flat_total(vm, econ, ctx, ask_per_video: Optional[float] = None) ->
                _flat_total(vm, econ, ctx))
 
 
+def _bundle_pv_cap(lad: PriceLadder, ctx: CampaignContext) -> float:
+    """The ceiling for a bundle's per-video rate: the walk-away, except in
+    sub-minimum floor mode where the opening already sits at min_offer_usd — a
+    later bundle must not price below that floor, so the cap is raised to it."""
+    if ctx.sub_minimum_policy == "floor":
+        return max(lad.walk_away, ctx.min_offer_usd)
+    return lad.walk_away
+
+
 def _bundle_per_video(vm, econ, ctx, ask_per_video: Optional[float] = None) -> float:
     """The per-video rate for a bundle. Start from the ladder's target less a bulk
     discount (standard for committing to several videos at once); if the creator
     has revealed a higher per-video ask, meet them just under it so the rate is
-    one they will actually accept. Never exceed the walk-away ceiling."""
+    one they will actually accept. Never exceed the walk-away ceiling — except in
+    floor mode, where it never drops below min_offer_usd (so we don't open at the
+    floor then undercut ourselves with a cheaper bundle)."""
     lad = _ladder(vm, econ, ctx)
     floor = lad.target * (1.0 - ctx.bundle_bulk_discount)
     per_video = floor
     if ask_per_video:
         per_video = max(floor, ask_per_video * (1.0 - ctx.ask_bulk_discount))
-    return min(per_video, lad.walk_away)
+    if ctx.sub_minimum_policy == "floor":
+        per_video = max(per_video, ctx.min_offer_usd)
+    return min(per_video, _bundle_pv_cap(lad, ctx))
 
 
 def _bundle_total(vm, econ, ctx, ask_per_video: Optional[float] = None,
                   target_videos: Optional[int] = None) -> float:
     videos = target_videos or ctx.target_videos
+    lad = _ladder(vm, econ, ctx)
     per_video = _bundle_per_video(vm, econ, ctx, ask_per_video)
     return _round_money_capped(per_video * videos, ctx.bundle_money_step,
-                               _ladder(vm, econ, ctx).walk_away * videos)
+                               _bundle_pv_cap(lad, ctx) * videos)
 
 
 def _concession_pv_ceiling(state, ctx) -> Optional[float]:
@@ -536,7 +550,7 @@ def _soft_close(state, vm, econ, ctx) -> Decision:
     return Decision(
         action=Action.SOFT_CLOSE, deal=None, ev=None,
         rationale="Not interested. Close gently, keep the door open." + note,
-        requires_approval=_requires_approval(Action.SOFT_CLOSE, None, state, ctx) or high_value)
+        requires_approval=_requires_approval(Action.SOFT_CLOSE, None, state, ctx))
 
 
 def _escalate_human(state, vm, econ, ctx, ask, *, extreme=False,
