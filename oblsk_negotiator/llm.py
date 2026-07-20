@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 import time
 from typing import Optional
 
@@ -41,6 +42,11 @@ _disabled = False        # hard failure: off for the rest of the run
 _cooldown_until = 0.0    # transient failure: off until this monotonic-ish time
 _consecutive_failures = 0
 _MAX_BACKOFF_S = 60.0
+_MAX_BACKOFF_EXP = 6     # cap the exponent so 2**n never overflows on a long run
+# The service is threaded (one request per thread), so the shared failure/cooldown
+# state is guarded. The lock is only ever held for tiny critical sections — never
+# across the network call or a sleep — so it does not serialize requests.
+_lock = threading.Lock()
 
 # Exception classes (by name) and HTTP status codes that mean "this key/setup
 # will never work" — latch off. Everything else caught is treated as transient.
@@ -74,18 +80,19 @@ def _get_client():
     failed hard (no credentials, no network), or we are mid-cooldown after a
     transient failure."""
     global _client, _disabled
-    if _disabled or os.environ.get("OBLSK_NO_LLM"):
+    if os.environ.get("OBLSK_NO_LLM"):
         return None
-    if time.time() < _cooldown_until:
-        return None
-    if _client is None:
-        try:
-            import anthropic
-            _client = anthropic.Anthropic()
-        except Exception:
-            _disabled = True
+    with _lock:
+        if _disabled or time.time() < _cooldown_until:
             return None
-    return _client
+        if _client is None:
+            try:
+                import anthropic
+                _client = anthropic.Anthropic()
+            except Exception:
+                _disabled = True
+                return None
+        return _client
 
 
 def llm_available() -> bool:
@@ -96,18 +103,22 @@ def _mark_failed(exc: Exception) -> None:
     """Record a failed call. Hard failures latch off for the run; transient
     ones start (or extend) a short exponential-backoff cooldown."""
     global _disabled, _cooldown_until, _consecutive_failures
-    if _is_hard(exc):
-        _disabled = True
-        return
-    _consecutive_failures += 1
-    backoff = min(2.0 ** _consecutive_failures, _MAX_BACKOFF_S)
-    _cooldown_until = time.time() + backoff
+    hard = _is_hard(exc)
+    with _lock:
+        if hard:
+            _disabled = True
+            return
+        _consecutive_failures += 1
+        backoff = min(2.0 ** min(_consecutive_failures, _MAX_BACKOFF_EXP),
+                      _MAX_BACKOFF_S)
+        _cooldown_until = time.time() + backoff
 
 
 def _reset_failures() -> None:
     global _consecutive_failures, _cooldown_until
-    _consecutive_failures = 0
-    _cooldown_until = 0.0
+    with _lock:
+        _consecutive_failures = 0
+        _cooldown_until = 0.0
 
 
 def _call(make_response):
@@ -127,7 +138,7 @@ def _call(make_response):
             if _is_hard(exc) or i == attempts - 1:
                 _mark_failed(exc)
                 return None
-            time.sleep(min(2.0 ** i, _MAX_BACKOFF_S))
+            time.sleep(min(2.0 ** min(i, _MAX_BACKOFF_EXP), _MAX_BACKOFF_S))
     return None
 
 
@@ -155,4 +166,12 @@ def complete_json(system: str, user: str, schema: dict,
     if response is None or response.stop_reason == "refusal":
         return None
     text = next((b.text for b in response.content if b.type == "text"), None)
-    return json.loads(text) if text else None
+    if not text:
+        return None
+    try:
+        return json.loads(text)
+    except (ValueError, TypeError):
+        # Structured outputs should be valid JSON, but if a model ever returns a
+        # malformed body we fall back to the caller's offline path rather than
+        # letting a JSONDecodeError escape and crash the request.
+        return None
