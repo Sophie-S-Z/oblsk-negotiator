@@ -206,6 +206,27 @@ def test_extreme_ask_escalates_to_human():
     assert d.action == Action.ESCALATE_HUMAN and "x what" in d.rationale
 
 
+def test_implausibly_low_ask_asks_human_not_accept():
+    # A mis-parsed $0/near-zero ask used to sail through ask_acceptable and lock
+    # the deal at that number. It now goes to a person to confirm the figure.
+    s = NegotiationState("c", "k", "t")
+    decide(CreatorMessage(Intent.INTERESTED), s, VM, ECON, CTX)          # open
+    d = decide(CreatorMessage(Intent.NEGOTIATING, ask_total_usd=0.0,
+                              ask_video_count=1, raw_text="sounds good"),
+               s, VM, ECON, CTX)
+    assert d.action == Action.ASK_HUMAN and d.human_prompt
+    d2 = decide(CreatorMessage(Intent.NEGOTIATING, ask_total_usd=50.0,
+                               ask_video_count=1, raw_text="can you do 50"),
+                s, VM, ECON, CTX)
+    assert d2.action == Action.ASK_HUMAN
+    # A genuine low-but-plausible counter (above the floor) still accepts.
+    s2 = NegotiationState("c", "k", "t2")
+    decide(CreatorMessage(Intent.INTERESTED), s2, VM, ECON, CTX)
+    ok = decide(CreatorMessage(Intent.NEGOTIATING, ask_total_usd=1500.0,
+                               ask_video_count=1), s2, VM, ECON, CTX)
+    assert ok.action == Action.ACCEPT
+
+
 def test_accept_never_crosses_walk_away():
     # Regression (screenshot bug): an ask above the walk-away ceiling but
     # inside willingness*accept_margin was accepted ($2,450 over a $2,372

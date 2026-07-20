@@ -96,6 +96,9 @@ class CampaignContext:
     accept_margin: float = 1.05                # accept asks within this of our max
     extreme_ask_multiple: float = 2.0          # asks above this multiple of the
                                                # walk-away ceiling go to a person
+    ask_floor_usd: Optional[float] = None      # asks per-video below this read as a
+                                               # parse error, not a real lowball, and
+                                               # go to a person (defaults to min_offer_usd)
     qa_offer_after: int = 3                    # the Nth money-free question gets an
                                                # offer instead of another answer
     target_videos: int = 3                     # videos in the single-format bundle
@@ -750,6 +753,21 @@ def _revise_flat(dctx: DecisionContext) -> Decision:
                                              state, ctx))
 
 
+def _resolve_ask_floor(ctx: CampaignContext) -> float:
+    """The lowest per-video ask we treat as genuine. Below this we suspect a
+    parsing error (a mis-extracted $0/near-zero) rather than a real lowball, and
+    ask a person to confirm before replying. Defaults to the opening floor."""
+    return ctx.ask_floor_usd if ctx.ask_floor_usd is not None else ctx.min_offer_usd
+
+
+def _ask_human_low_ask(d: DecisionContext) -> Decision:
+    floor = _resolve_ask_floor(d.ctx)
+    return _ask_human(d, need=(
+        f"Their ask reads as ${d.ask_per_video:,.0f}/video, below our "
+        f"${floor:,.0f} floor — likely a parsing error or a term I'm missing, "
+        f"not a real number. Confirm the intended figure before I reply."))
+
+
 def _accept_threshold_per_video(d: DecisionContext) -> float:
     """The most per video we will accept right now: willingness plus the
     thin-gap margin, hard-capped at the walk-away. The margin exists to close
@@ -794,6 +812,12 @@ GUARDS = {
     "rejected_again": lambda d: (
         d.msg.intent == Intent.REJECTING and d.ask is None
         and d.state.consecutive_rejections >= 2),
+    # A per-video ask below the floor is almost certainly a mis-parse (a $0 or
+    # near-zero extraction), not a genuine lowball — confirm before treating it
+    # as acceptable. Sits just before ask_acceptable so it intercepts first.
+    "ask_implausibly_low": lambda d: (
+        d.ask_per_video is not None and
+        d.ask_per_video < _resolve_ask_floor(d.ctx)),
     "ask_acceptable": lambda d: (
         d.ask_per_video is not None and
         d.ask_per_video <= _accept_threshold_per_video(d)),
@@ -817,6 +841,7 @@ HANDLERS = {
     "hold_position": _hold_position,
     "soft_close": lambda d: _soft_close(d.state, d.vm, d.econ, d.ctx),
     "revise_flat": _revise_flat,
+    "ask_human_low_ask": _ask_human_low_ask,
     "accept_ask": lambda d: _accept_ask(
         d.msg, d.state, d.vm, d.econ, d.ctx, _accept_threshold_per_video(d)),
     "escalate_human_extreme": lambda d: _escalate_human(
