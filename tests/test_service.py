@@ -116,6 +116,63 @@ def test_own_bundle_message_reconstructs_and_holds():
     assert "$7,000" in out["message"]
 
 
+def test_ev_snapshot_freezes_pricing_across_turns():
+    # First turn builds and echoes the snapshot.
+    out1 = suggest({
+        "creatorHandle": "@fam",
+        "medianViewsPerVideo": 150000,
+        "messages": [_msg("creator", "What did you have in mind?", 1)],
+    }, CAMP)
+    snap = out1["agent"]["evSnapshot"]
+    assert snap and "viewModel" in snap
+
+    # A later turn with a very different reach signal, but resending the snapshot,
+    # prices off the frozen model -> identical ladder.
+    later = [_msg("creator", "What did you have in mind?", 1),
+             _msg("brand", "We were thinking $1,500 for one video.", 2),
+             _msg("creator", "Hmm, can you share more on usage?", 3)]
+    out2 = suggest({"medianViewsPerVideo": 999999, "evSnapshot": snap,
+                    "messages": later}, CAMP)
+    assert out2["agent"]["ladder"] == out1["agent"]["ladder"]
+
+    # Without the snapshot, the inflated reach signal moves the ladder — proving
+    # the snapshot is what pinned it.
+    out2b = suggest({"medianViewsPerVideo": 999999, "messages": later}, CAMP)
+    assert out2b["agent"]["ladder"] != out1["agent"]["ladder"]
+
+
+def test_history_reconstruction_uses_interpret_message(monkeypatch):
+    # _state_from_turns must read past turns through the LLM-capable
+    # interpret_message (not the heuristic), so a human-phrased brand offer whose
+    # own number is not the last dollar in the sentence is still recorded
+    # correctly. Simulate the LLM reading "$400" as our offer.
+    import oblsk_negotiator.service as svc
+    from oblsk_negotiator.behavior_tree import CreatorMessage, Intent
+
+    real = svc.interpret_message
+
+    def fake(text):
+        if "we can do" in text.lower():
+            return CreatorMessage(Intent.NEGOTIATING, ask_total_usd=400.0,
+                                  ask_video_count=1, raw_text=text)
+        return real(text)
+
+    monkeypatch.setattr(svc, "interpret_message", fake)
+    out = suggest({
+        "medianViewsPerVideo": 150000,
+        "messages": [
+            _msg("creator", "What's the budget?", 1),
+            # Our number ($400) is NOT the last dollar figure — the heuristic
+            # would wrongly latch onto the creator's $500.
+            _msg("brand", "We can do $400, though I know you were hoping for $500.", 2),
+            _msg("creator", "Following up — still keen!", 3),
+        ],
+    }, CAMP)
+    # The standing offer the agent holds is $400, not $500.
+    assert out["agent"]["deal"]["flat_per_video"] == 400.0
+    assert "$400" in out["message"]
+
+
 def test_bad_payloads_raise():
     with pytest.raises(ValueError, match="messages"):
         suggest({"medianViewsPerVideo": 150000, "messages": []}, CAMP)

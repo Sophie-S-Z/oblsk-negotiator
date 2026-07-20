@@ -27,9 +27,12 @@ For each creator, once per inbound message:
    and drafts the reply. It returns the message, the move, and whether a human
    needs to approve or act.
 4. **The platform shows it in the review UI** (also already built). A teammate
-   approves → the existing sender emails it. Or the agent flagged
-   `requiresApproval: false` and it auto-sends, within the campaign's dollar
-   ceiling.
+   approves → the existing sender emails it. Every creator-facing draft the
+   agent returns carries `requiresApproval: true` — nothing it writes (answers
+   and offers included) sends without a human clicking send. Treat the returned
+   `message` strictly as a pre-filled draft awaiting that click. Only the
+   internal moves (`ask_human`, `pause_human`) come back `false`; they draft
+   nothing for the creator.
 5. **Repeat** until the agent's move is `accept` (deal closed), `escalate`
    (handed to a person), or it asks a human for something it can't answer.
 
@@ -112,7 +115,17 @@ it. Dollar offers found in `brand` messages become the agent's recorded
 positions — whoever sent them, the agent or a person — so the agent picks up
 mid-flight threads without re-opening at the anchor, and humans can freely
 take over and hand back. The creator's first ask is read from their messages
-the same way.
+the same way. History turns are read with the same LLM-first interpreter as the
+live message (heuristic fallback offline), so a human-phrased brand offer whose
+own number isn't the last dollar in the sentence is still recorded correctly.
+
+**Freezing the pricing inputs (`evSnapshot`).** Each response's `agent.evSnapshot`
+holds the calculator inputs (the fitted view model and economics) frozen for
+this thread. Store it and send it back in the next request's top-level
+`evSnapshot` field: when present, the service prices off it instead of re-fitting
+from `recentPostViews`, so the ladder stays stable as the creator's post history
+grows. Omit it and the service recomputes deterministically from the payload
+(fine for a first turn or if you don't persist it).
 
 ## 4. Convex-side wiring
 
@@ -150,7 +163,10 @@ Set `NEGOTIATOR_URL` and `NEGOTIATOR_TOKEN` in the Convex deployment env.
 Recommended handling of the extension block:
 
 - `agent.requiresApproval` → keep the conversation in the existing
-  `needs_human_confirmation` status instead of auto-sending.
+  `needs_human_confirmation` status instead of auto-sending. It is `true` for
+  every creator-facing draft (openings and answers included), so a person
+  always clicks send; it is `false` only for the internal `ask_human` /
+  `pause_human` moves, which send nothing.
 - `agent.humanPrompt` non-null → surface it in the inbox UI; for `ask_human`
   nothing should be sent until a teammate answers (add the answer to the
   thread and re-request a suggestion); for `propose_call` the drafted message

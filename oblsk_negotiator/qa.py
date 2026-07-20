@@ -32,8 +32,15 @@ class CampaignBrief:
     revisions: str = "one round of revisions, we keep notes light"
     payment_terms: str = "net-30 after the content goes live, faster pay available"
     creative_freedom: str = "you have creative control, we share a few talking points and let you run with it"
+    content_style: str = "your usual style — we don't over-direct the edit or the voice, whatever feels native to your feed"
     primary_format: Optional[str] = None      # the format the campaign opens on
     allowed_formats: Optional[list] = None     # formats the agent may bundle in
+    # Reply language override. When set the agent always replies in this
+    # language; when None it mirrors the creator's detected message language.
+    reply_language: Optional[str] = None
+    # The team's own outreach voice, injected as a baseline structure/tone for
+    # the LLM to draft around (numbers still come from the calculator).
+    voice_template: Optional[str] = None
     extra_facts: dict = field(default_factory=dict)
 
 
@@ -49,6 +56,12 @@ _TOPIC_KEYWORDS = {
                       "paid", "when do i get"],
     "creative_freedom": ["creative", "script", "say", "freedom", "control",
                          "talking point", "guideline"],
+    # Note: multiword "editing style" (not bare "edit", which is a revisions
+    # keyword) and no bare "voice" (that collides with the voice_template
+    # concept) — these ask what the content should feel like, not who edits it.
+    "content_style": ["style", "vibe", "tone", "aesthetic", "editing style",
+                      "look and feel", "how should it look", "content style",
+                      "style of content"],
     "product": ["product", "brand", "who is", "what is", "about the", "company"],
     "budget": ["budget", "rate", "how much", "pay me", "fee", "price", "cost",
                "does this pay", "have in mind", "what were you thinking",
@@ -124,6 +137,7 @@ def answer_from_brief(question: str, brief: CampaignBrief) -> str:
         "revisions": f"For revisions, {brief.revisions}.",
         "payment_terms": f"On payment, {brief.payment_terms}.",
         "creative_freedom": f"On the creative, {brief.creative_freedom}.",
+        "content_style": f"On the style, {brief.content_style}.",
         "product": (f"It is for {brief.brand}, promoting {brief.product}. Happy to "
                     f"share more from the brief if useful."),
     }
@@ -137,13 +151,13 @@ def answer_from_brief(question: str, brief: CampaignBrief) -> str:
 
 
 def answer_question(question: str, brief: CampaignBrief,
-                    thread_history: str = "") -> str:
+                    thread_history: str = "", *, language: str = "English") -> str:
     """Answer a creator question: LLM from the brief when available, keyword
     fallback otherwise. Budget questions never get an answer here — the caller
     routes them to an offer — but guard anyway so no path quotes a rate."""
     if classify_question_topic(question) == "budget":
         return answer_from_brief(question, brief)
-    prompt = build_qa_llm_prompt(question, brief, thread_history)
+    prompt = build_qa_llm_prompt(question, brief, thread_history, language=language)
     draft = llm.complete(prompt["system"], prompt["user"], max_tokens=300)
     if draft and "$" not in draft:
         return draft.strip()
@@ -151,19 +165,23 @@ def answer_question(question: str, brief: CampaignBrief,
 
 
 def build_qa_llm_prompt(question: str, brief: CampaignBrief,
-                        thread_history: str = "") -> dict:
+                        thread_history: str = "", *,
+                        language: str = "English") -> dict:
     facts = "\n".join([
         f"Brand: {brief.brand}", f"Product: {brief.product}",
         f"Platform: {brief.platform}", f"Deliverables: {brief.deliverables}",
         f"Timeline: {brief.timeline}", f"Usage rights: {brief.usage_rights}",
         f"Exclusivity: {brief.exclusivity}", f"Revisions: {brief.revisions}",
-        f"Payment: {brief.payment_terms}", f"Creative: {brief.creative_freedom}"])
+        f"Payment: {brief.payment_terms}", f"Creative: {brief.creative_freedom}",
+        f"Content style: {brief.content_style}"])
     system = (
         "You are an experienced influencer-marketing account manager answering a "
         "creator's question over email or DM. Warm, brief, real. Never reveal or "
         "imply you are an AI. Use only the campaign facts provided; if you do not "
         "know something, say you will check. Never quote a rate or budget; if asked "
         "about money, say you will send a number shortly. Under 90 words.")
+    if language and language.lower() != "english":
+        system += f" Write your reply in {language}."
     user = [f"Campaign facts:\n{facts}", f"\nCreator asked: {question}"]
     if thread_history:
         user.append(f"\nPrior thread (for tone):\n{thread_history}")

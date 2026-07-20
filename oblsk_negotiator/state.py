@@ -65,6 +65,10 @@ class NegotiationState:
     thread_id: str
 
     autonomy_level: AutonomyLevel = AutonomyLevel.HUMAN_APPROVAL
+    # Frozen calculator inputs for this thread (view model + economics). The
+    # stateless service builds it on the first turn and echoes it to the platform
+    # as `evSnapshot`; resent on later turns it pins pricing so the ladder does
+    # not drift as the creator's post history grows. See service._ev_snapshot.
     ev_snapshot: dict = field(default_factory=dict)
 
     phase: Phase = Phase.QA

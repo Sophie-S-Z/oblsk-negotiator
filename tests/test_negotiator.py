@@ -18,9 +18,10 @@ from oblsk_negotiator.behavior_tree import (decide, CreatorMessage, Intent,
                                            _max_pay_per_video)
 from oblsk_negotiator.pricing import price_ladder, authenticity
 from oblsk_negotiator.qa import (CampaignBrief, classify_question_topic,
-                                answer_from_brief, signals_ready_for_offer)
+                                answer_from_brief, signals_ready_for_offer,
+                                can_answer)
 from oblsk_negotiator.creator_sim import SimCreator
-from oblsk_negotiator.prose import render_template
+from oblsk_negotiator.prose import render_template, write_message
 from oblsk_negotiator.runner import run_negotiation, reject_action
 
 ECON = CreatorEconomics(conversion_rate=0.0016, ltv_usd=80)
@@ -123,6 +124,22 @@ def test_qa_topic_and_answer():
     assert len(answer_from_brief("what are the deliverables here?", CampaignBrief())) > 0
 
 
+def test_qa_content_style_is_answered_not_escalated():
+    # "style of content" questions used to fall into `general` and get paged to
+    # a human; they now classify as content_style and answer from the brief.
+    for q in ("what style of content are you looking for?",
+              "what's the vibe / editing style you want?",
+              "any particular tone or aesthetic in mind?"):
+        assert classify_question_topic(q) == "content_style", q
+        assert can_answer(q, CampaignBrief()) is True, q
+    ans = answer_from_brief("what style of content are you looking for?", CampaignBrief())
+    assert "style" in ans.lower() and "$" not in ans
+
+    # Guard against collisions with neighbouring topics.
+    assert classify_question_topic("do i get a round of revisions?") == "revisions"
+    assert classify_question_topic("how many videos do i make?") == "deliverables"
+
+
 def test_qa_budget_routes_to_offer():
     assert signals_ready_for_offer("how much does this pay?")
 
@@ -189,6 +206,46 @@ def test_extreme_ask_escalates_to_human():
     assert d.action == Action.ESCALATE_HUMAN and "x what" in d.rationale
 
 
+def test_implausibly_low_ask_asks_human_not_accept():
+    # A mis-parsed $0/near-zero ask used to sail through ask_acceptable and lock
+    # the deal at that number. It now goes to a person to confirm the figure.
+    s = NegotiationState("c", "k", "t")
+    decide(CreatorMessage(Intent.INTERESTED), s, VM, ECON, CTX)          # open
+    d = decide(CreatorMessage(Intent.NEGOTIATING, ask_total_usd=0.0,
+                              ask_video_count=1, raw_text="sounds good"),
+               s, VM, ECON, CTX)
+    assert d.action == Action.ASK_HUMAN and d.human_prompt
+    d2 = decide(CreatorMessage(Intent.NEGOTIATING, ask_total_usd=50.0,
+                               ask_video_count=1, raw_text="can you do 50"),
+                s, VM, ECON, CTX)
+    assert d2.action == Action.ASK_HUMAN
+    # A genuine low-but-plausible counter (above the floor) still accepts.
+    s2 = NegotiationState("c", "k", "t2")
+    decide(CreatorMessage(Intent.INTERESTED), s2, VM, ECON, CTX)
+    ok = decide(CreatorMessage(Intent.NEGOTIATING, ask_total_usd=1500.0,
+                               ask_video_count=1), s2, VM, ECON, CTX)
+    assert ok.action == Action.ACCEPT
+
+
+def test_bundle_offer_clamped_to_prior_concession():
+    # Safety net: if a drifted recompute would price a bundle far above what we
+    # already offered (the $2,200-after-$400 shape), the per-video rate is pinned
+    # to the last concession plus the anomaly margin.
+    s = NegotiationState("c", "k", "t")
+    decide(CreatorMessage(Intent.INTERESTED), s, VM, ECON, CTX)          # open
+    decide(CreatorMessage(Intent.REJECTING, raw_text="too low"), s, VM, ECON, CTX)  # revise
+    # Simulate a corrupted/low recorded concession (a misread we should not
+    # bid away from): our last position reads as $400 for one video.
+    s.concession_history[-1].offered_total = 400.0
+    s.concession_history[-1].offered_video_count = 1
+    d = decide(CreatorMessage(Intent.NEGOTIATING, ask_total_usd=4000,
+                              raw_text="I need a lot more"), s, VM, ECON, CTX)
+    assert d.action == Action.ESCALATE_BUNDLE
+    per_video = d.deal.total_usd / d.deal.video_count
+    ceiling = 400.0 * (1.0 + CTX.max_concession_step)
+    assert per_video <= ceiling + CTX.bundle_money_step   # pinned, allowing rounding
+
+
 def test_accept_never_crosses_walk_away():
     # Regression (screenshot bug): an ask above the walk-away ceiling but
     # inside willingness*accept_margin was accepted ($2,450 over a $2,372
@@ -247,6 +304,40 @@ def test_ladder_orders_and_reproduces():
     assert again.target == lad.target and again.walk_away == lad.walk_away
 
 
+# A thin, low-conversion creator whose ROI-justified target falls below the
+# opening floor — the exact shape that used to open at $0/video.
+_THIN_VM = fit_view_model([50, 40, 60, 45, 55, 30])
+_THIN_ECON = CreatorEconomics(conversion_rate=0.001, ltv_usd=20)
+
+
+def test_sub_minimum_escalates_by_default_never_opens_at_zero():
+    from oblsk_negotiator.behavior_tree import _ladder
+    lad = _ladder(_THIN_VM, _THIN_ECON, CTX)
+    assert lad.target < CTX.min_offer_usd            # precondition: thin creator
+    s = NegotiationState("c", "k", "t")
+    d = decide(CreatorMessage(Intent.INTERESTED, raw_text="sounds interesting"),
+               s, _THIN_VM, _THIN_ECON, CTX)
+    assert d.action == Action.ESCALATE_HUMAN
+    assert "floor" in (s.escalation_reason or "").lower()
+    # The bug symptom — a $0 opening flat — is never produced.
+    assert d.action != Action.OPENING_FLAT
+
+
+def test_sub_minimum_floor_mode_opens_at_least_at_the_floor():
+    ctx = CampaignContext(sub_minimum_policy="floor")
+    s = NegotiationState("c", "k", "t")
+    d = decide(CreatorMessage(Intent.INTERESTED, raw_text="sounds interesting"),
+               s, _THIN_VM, _THIN_ECON, ctx)
+    assert d.action == Action.OPENING_FLAT
+    assert d.deal.total_usd >= ctx.min_offer_usd     # the floor actually holds
+
+
+def test_sub_minimum_policy_validated():
+    import pytest
+    with pytest.raises(ValueError):
+        CampaignContext(sub_minimum_policy="nonsense")
+
+
 def test_ladder_cpm_cap_binds():
     from oblsk_negotiator.pricing import PricingPolicy
     tight = PricingPolicy(cpm_cap_usd=1.0)   # $1 per 1,000 views: far below ROI room
@@ -302,9 +393,30 @@ def test_approval_required_in_human_mode():
     assert decide(CreatorMessage(Intent.INTERESTED), s, VM, ECON, CTX).requires_approval
 
 
-def test_autonomous_small_deal_no_approval():
+def test_all_outbound_drafts_require_human_send():
+    """No creator-facing text ever auto-sends: every outbound action (and
+    ESCALATE_HUMAN) requires approval regardless of autonomy level or total;
+    only the internal ASK_HUMAN/PAUSE_HUMAN moves proceed on their own."""
+    outbound = [Action.ANSWER_QUESTION, Action.OPENING_FLAT, Action.ESCALATE_BUNDLE,
+                Action.ADD_SWEETENER, Action.HOLD_FIRM, Action.PROPOSE_CALL,
+                Action.ACCEPT, Action.SOFT_CLOSE]
+    for level in (AutonomyLevel.HUMAN_APPROVAL, AutonomyLevel.AUTONOMOUS):
+        s = NegotiationState("c", "k", "t", autonomy_level=level)
+        for action in outbound:
+            for total in (None, 50, 1500, 10_000_000):
+                assert _requires_approval(action, total, s, CTX) is True, (action, total, level)
+        assert _requires_approval(Action.ESCALATE_HUMAN, None, s, CTX) is True
+        assert _requires_approval(Action.ASK_HUMAN, None, s, CTX) is False
+        assert _requires_approval(Action.PAUSE_HUMAN, None, s, CTX) is False
+
+
+def test_outbound_decision_still_carries_a_draft():
+    """The human gets a pre-filled box, not an empty one: an auto-mode opening
+    still produces both a draft and requires_approval=True."""
     s = NegotiationState("c", "k", "t", autonomy_level=AutonomyLevel.AUTONOMOUS)
-    assert _requires_approval(Action.OPENING_FLAT, 1500, s, CTX) is False
+    d = decide(CreatorMessage(Intent.INTERESTED, raw_text="interested"), s, VM, ECON, CTX)
+    assert d.action == Action.OPENING_FLAT and d.requires_approval is True
+    assert len(write_message(d, creator_name="Ana")) > 0
 
 
 def test_human_rejection_escalates():
@@ -330,11 +442,15 @@ def test_e2e_creators_close_or_escalate():
                 assert o.discount_from_ask >= -0.01
 
 
-def test_autonomous_closes_without_approvals():
+def test_autonomous_still_requests_approval_on_every_draft():
+    # The autonomy level no longer bypasses sending: even in AUTONOMOUS mode
+    # every creator-facing draft is put up for human approval before it goes
+    # out. It still closes (the approver here approves), but approvals are
+    # requested rather than skipped.
     o = run_negotiation(VM, ECON, CTX, _sim(floor=1700, counter=0.7, bulk=0.08,
                                             max_videos=5, seed=1),
                         autonomy=AutonomyLevel.AUTONOMOUS)
-    assert o.status == "accepted" and o.approvals_requested == 0
+    assert o.status == "accepted" and o.approvals_requested > 0
 
 
 def test_composed_bundle_accept_above_singleformat_walkaway():

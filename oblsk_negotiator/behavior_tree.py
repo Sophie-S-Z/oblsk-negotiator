@@ -39,7 +39,7 @@ from .bundles import (flat_offer, bundle_from_flat, add_non_price_sweetener,
                       compose_bundle, bundle_format_summary)
 from .pricing import PricingPolicy, PriceLadder, price_ladder
 from .rate_card import RateCard
-from .state import NegotiationState, Status, Phase, AutonomyLevel
+from .state import NegotiationState, Status, Phase
 from .qa import (CampaignBrief, answer_question, can_answer,
                 classify_question_topic, forward_nudge)
 
@@ -69,13 +69,20 @@ class CreatorMessage:
     # They reference a call or conversation the agent was not part of. That
     # context lives with the team, so the agent asks before acting on it.
     refers_to_call: bool = False
+    # The language the creator wrote in (ISO name, e.g. "Spanish"), detected by
+    # the LLM interpreter. None when unknown/offline; resolves to the campaign
+    # override or English downstream.
+    language: Optional[str] = None
 
 
 @dataclass
 class CampaignContext:
     """Per-campaign knobs. Every number the negotiator uses lives here, so a
     campaign tunes its stance in config instead of editing pricing code."""
-    auto_send_dollar_ceiling: float = 3000.0  # above this, a person signs off
+    # Deprecated/inert: every creator-facing draft now requires human send
+    # (see _requires_approval), so this no longer gates anything. Retained so
+    # existing campaign YAML that sets it still loads.
+    auto_send_dollar_ceiling: float = 3000.0
 
     # The pricing ladder (see pricing.py): where we open, aim, and stop.
     roi_target: float = 3.0                    # revenue/cost multiple we aim for
@@ -89,24 +96,47 @@ class CampaignContext:
     accept_margin: float = 1.05                # accept asks within this of our max
     extreme_ask_multiple: float = 2.0          # asks above this multiple of the
                                                # walk-away ceiling go to a person
+    ask_floor_usd: Optional[float] = None      # asks per-video below this read as a
+                                               # parse error, not a real lowball, and
+                                               # go to a person (defaults to min_offer_usd)
     qa_offer_after: int = 3                    # the Nth money-free question gets an
                                                # offer instead of another answer
     target_videos: int = 3                     # videos in the single-format bundle
     bundle_bulk_discount: float = 0.10         # per-video discount for committing to several
     ask_bulk_discount: float = 0.05            # lighter discount when anchored to their ask
     high_value_threshold_usd: float = 5000.0   # expected revenue/video that flags follow-up
+    # Anomaly guard on the single-format bundle path: a new offer's per-video
+    # rate may not exceed the last recorded concession's by more than this. The
+    # ladder legitimately concedes upward in large steps (an opening at the
+    # anchor to a revised flat at target is already ~60%), so this is a coarse
+    # net against gross drift — a recompute jumping to several times the number
+    # we already offered — not a tight step limit. ev_snapshot freezing the
+    # inputs per thread is the primary fix; this backstops it.
+    max_concession_step: float = 1.0
     money_step: float = 50.0                   # round flat offers to this
     bundle_money_step: float = 100.0           # round bundle totals to this
     call_windows: str = ""                     # when our team can take intro calls,
                                                # e.g. "Thursday after 3 PM ET"; the
                                                # agent proposes these, a human runs
                                                # the call
+    # What to do when a creator's ROI-justified target falls below the opening
+    # floor (a thin/low-value creator). "escalate": hand to a person rather than
+    # open at a nonsense number (default). "floor": open at min_offer_usd anyway,
+    # accepting the lower/negative ROI, with the discrepancy shown in the rationale.
+    sub_minimum_policy: str = "escalate"
+
+    def __post_init__(self):
+        if self.sub_minimum_policy not in ("escalate", "floor"):
+            raise ValueError(
+                f"sub_minimum_policy must be 'escalate' or 'floor', "
+                f"got {self.sub_minimum_policy!r}")
 
     def pricing_policy(self) -> PricingPolicy:
         return PricingPolicy(
             roi_target=self.roi_target, roi_min=self.roi_min,
             anchor_factor=self.anchor_factor, cpm_cap_usd=self.cpm_cap_usd,
-            risk_discount=self.risk_discount, min_offer_usd=self.min_offer_usd)
+            risk_discount=self.risk_discount, min_offer_usd=self.min_offer_usd,
+            sub_minimum_floor=(self.sub_minimum_policy == "floor"))
 
 
 class Action(str, Enum):
@@ -147,15 +177,26 @@ class Decision:
     human_prompt: Optional[str] = None
 
 
+def resolve_reply_language(brief, msg) -> str:
+    """The language to reply in: the campaign override wins, else the creator's
+    detected message language, else English."""
+    override = getattr(brief, "reply_language", None) if brief is not None else None
+    return override or getattr(msg, "language", None) or "English"
+
+
 def _requires_approval(action: Action, total: Optional[float],
                        state: NegotiationState, ctx: CampaignContext) -> bool:
-    if action == Action.ESCALATE_HUMAN:
-        return True
-    if action not in _OUTBOUND:
-        return False
-    if state.autonomy_level == AutonomyLevel.HUMAN_APPROVAL:
-        return True
-    return total is not None and total > ctx.auto_send_dollar_ceiling
+    """Every creator-facing draft is human-sent — nothing the agent writes goes
+    out until a person clicks send. So all outbound actions (and ESCALATE_HUMAN)
+    require approval regardless of autonomy level or dollar total; only the
+    internal moves (ASK_HUMAN, PAUSE_HUMAN, which draft nothing for the creator)
+    proceed on their own.
+
+    `total`, `state`, and `ctx` no longer gate the decision — they are kept in
+    the signature so the handler call sites stay unchanged. `AutonomyLevel` and
+    `ctx.auto_send_dollar_ceiling` are retained for serialization/config
+    compatibility but no longer influence sending."""
+    return action in _OUTBOUND or action == Action.ESCALATE_HUMAN
 
 
 # ---- valuation: read the calculator, decide what we will pay ----------------
@@ -184,6 +225,12 @@ def _ladder(vm: ViewModel, econ: CreatorEconomics,
 def _flat_total(vm, econ, ctx) -> float:
     """The opening flat: the ladder's anchor, rounded to a clean number."""
     lad = _ladder(vm, econ, ctx)
+    if (ctx.sub_minimum_policy == "floor"
+            and lad.anchor >= ctx.min_offer_usd > lad.walk_away):
+        # Floor mode with the floor above the walk-away: honor the minimum even
+        # though the p10 downside can't clear it (a deliberate, human-visible
+        # ROI-negative open). Round without the walk-away cap.
+        return _round_money(lad.anchor, ctx.money_step)
     return _round_money_capped(lad.anchor, ctx.money_step, lad.walk_away)
 
 
@@ -224,6 +271,19 @@ def _bundle_total(vm, econ, ctx, ask_per_video: Optional[float] = None,
     per_video = _bundle_per_video(vm, econ, ctx, ask_per_video)
     return _round_money_capped(per_video * videos, ctx.bundle_money_step,
                                _ladder(vm, econ, ctx).walk_away * videos)
+
+
+def _concession_pv_ceiling(state, ctx) -> Optional[float]:
+    """The most a new per-video offer may be, given what we already put on the
+    table: the last recorded concession's per-video rate plus the anomaly
+    margin. None when there is no prior offer. Guards against a drifted recompute
+    (e.g. a mismatched view model) proposing a rate several times what we already
+    offered — the $2,200-after-$400 shape."""
+    if not state.concession_history:
+        return None
+    last = state.concession_history[-1]
+    last_pv = last.offered_total / max(last.offered_video_count, 1)
+    return last_pv * (1.0 + ctx.max_concession_step)
 
 
 def _willingness_per_video(state, vm, econ, ctx) -> float:
@@ -302,6 +362,17 @@ def decide(msg: CreatorMessage,
 # ---- nodes ------------------------------------------------------------------
 
 def _opening_flat(state, vm, econ, ctx, *, reason: str) -> Decision:
+    lad = _ladder(vm, econ, ctx)
+    if ctx.sub_minimum_policy == "escalate" and lad.target < ctx.min_offer_usd:
+        # The ROI-justified target is below our opening floor: opening at a
+        # credible number would break ROI. A person decides whether brand-fit
+        # justifies paying the floor. (Every path to an opening comes through
+        # here, so this covers the budget-question and qa-threshold routes too.)
+        return _escalate_human(state, vm, econ, ctx, None, reason=(
+            f"This creator's ROI-justified target (${lad.target:,.0f}/video) is "
+            f"below our ${ctx.min_offer_usd:,.0f} opening floor — opening at the "
+            f"floor would run below ROI. A person should decide whether the "
+            f"brand-fit justifies it before we make an offer."))
     deal = flat_offer(_flat_total(vm, econ, ctx), video_count=1)
     ev = _score(deal, vm, econ, seed=3)
 
@@ -352,6 +423,11 @@ def _escalate_bundle(state, vm, econ, ctx, ask, ask_per_video=None, *,
     # independent draw, so the total return scales while the rate stays fair.
     target_videos = ctx.target_videos
     total = _bundle_total(vm, econ, ctx, ask_per_video, target_videos)
+    ceiling_pv = _concession_pv_ceiling(state, ctx)
+    if ceiling_pv is not None and total / target_videos > ceiling_pv:
+        # Recompute drifted above what we already offered — pin to the ceiling.
+        total = _round_money_capped(ceiling_pv * target_videos,
+                                    ctx.bundle_money_step, ceiling_pv * target_videos)
     bundle = Deal(video_count=target_videos, flat_per_video=total / target_videos)
     ev = _score(bundle, vm, econ, seed=7)
 
@@ -612,7 +688,8 @@ def _question(dctx: DecisionContext) -> Decision:
     if not state.flat_offer_made and state.questions_answered >= ctx.qa_offer_after:
         return _opening_flat(state, dctx.vm, dctx.econ, ctx,
                              reason="several questions answered, time for a number")
-    answer = answer_question(msg.raw_text, brief)
+    answer = answer_question(msg.raw_text, brief,
+                             language=resolve_reply_language(brief, msg))
     nudge = forward_nudge(state.questions_answered, state.flat_offer_made)
     answer_text = f"{answer} {nudge}".strip() if nudge else answer
     return Decision(
@@ -731,6 +808,21 @@ def _revise_flat(dctx: DecisionContext) -> Decision:
                                              state, ctx))
 
 
+def _resolve_ask_floor(ctx: CampaignContext) -> float:
+    """The lowest per-video ask we treat as genuine. Below this we suspect a
+    parsing error (a mis-extracted $0/near-zero) rather than a real lowball, and
+    ask a person to confirm before replying. Defaults to the opening floor."""
+    return ctx.ask_floor_usd if ctx.ask_floor_usd is not None else ctx.min_offer_usd
+
+
+def _ask_human_low_ask(d: DecisionContext) -> Decision:
+    floor = _resolve_ask_floor(d.ctx)
+    return _ask_human(d, need=(
+        f"Their ask reads as ${d.ask_per_video:,.0f}/video, below our "
+        f"${floor:,.0f} floor — likely a parsing error or a term I'm missing, "
+        f"not a real number. Confirm the intended figure before I reply."))
+
+
 def _accept_threshold_per_video(d: DecisionContext) -> float:
     """The most per video we will accept right now: willingness plus the
     thin-gap margin, hard-capped at the walk-away. The margin exists to close
@@ -775,6 +867,12 @@ GUARDS = {
     "rejected_again": lambda d: (
         d.msg.intent == Intent.REJECTING and d.ask is None
         and d.state.consecutive_rejections >= 2),
+    # A per-video ask below the floor is almost certainly a mis-parse (a $0 or
+    # near-zero extraction), not a genuine lowball — confirm before treating it
+    # as acceptable. Sits just before ask_acceptable so it intercepts first.
+    "ask_implausibly_low": lambda d: (
+        d.ask_per_video is not None and
+        d.ask_per_video < _resolve_ask_floor(d.ctx)),
     "ask_acceptable": lambda d: (
         d.ask_per_video is not None and
         d.ask_per_video <= _accept_threshold_per_video(d)),
@@ -798,6 +896,7 @@ HANDLERS = {
     "hold_position": _hold_position,
     "soft_close": lambda d: _soft_close(d.state, d.vm, d.econ, d.ctx),
     "revise_flat": _revise_flat,
+    "ask_human_low_ask": _ask_human_low_ask,
     "accept_ask": lambda d: _accept_ask(
         d.msg, d.state, d.vm, d.econ, d.ctx, _accept_threshold_per_video(d)),
     "escalate_human_extreme": lambda d: _escalate_human(

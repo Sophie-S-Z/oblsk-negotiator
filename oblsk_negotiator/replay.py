@@ -37,7 +37,7 @@ from typing import Optional
 
 from . import llm
 from .behavior_tree import (CampaignContext, CreatorMessage, Decision, Intent,
-                            decide)
+                            decide, resolve_reply_language)
 from .ev_engine import CreatorEconomics, FormatCatalog, ViewModel
 from .prose import write_message
 from .qa import CampaignBrief
@@ -265,9 +265,10 @@ _INTERPRET_SCHEMA = {
         "contract_terms": {"type": "boolean"},
         "wants_call": {"type": "boolean"},
         "refers_to_call": {"type": "boolean"},
+        "language": {"type": ["string", "null"]},
     },
     "required": ["intent", "ask_total_usd", "ask_video_count", "contract_terms",
-                 "wants_call", "refers_to_call"],
+                 "wants_call", "refers_to_call", "language"],
     "additionalProperties": False,
 }
 
@@ -286,6 +287,8 @@ _INTERPRET_SYSTEM = (
     "rather than only a price. wants_call: true when they propose, request, or "
     "confirm availability for a call or meeting. refers_to_call: true when they "
     "reference a past call or conversation (e.g. 'as discussed on our call'). "
+    "language: the language the creator wrote in, as an English name (e.g. "
+    "'English', 'Spanish', 'Portuguese'); null only if genuinely undeterminable. "
     "Judge only the creator's position, never ours.")
 
 
@@ -379,7 +382,8 @@ def interpret_message(text: str) -> CreatorMessage:
                 raw_text=text,
                 contract_terms=bool(result.get("contract_terms")),
                 wants_call=bool(result.get("wants_call")),
-                refers_to_call=bool(result.get("refers_to_call")))
+                refers_to_call=bool(result.get("refers_to_call")),
+                language=result.get("language") or None)
         except (ValueError, KeyError):
             pass
     return heuristic_interpret(text)
@@ -455,7 +459,9 @@ def replay_thread(transcript: str | list[Turn],
                           catalog=catalog, rate_card=rate_card)
         draft = write_message(decision, creator_name=creator_name,
                               thread_history=_turns_as_text(turns[:i]),
-                              seed=i)
+                              seed=i,
+                              language=resolve_reply_language(brief, msg),
+                              voice_template=getattr(brief, "voice_template", None))
         human_reply = next((t.text for t in turns[i + 1:i + 2] if t.sender == "us"),
                            None)
         report.steps.append(ReplayStep(
