@@ -18,7 +18,8 @@ from oblsk_negotiator.behavior_tree import (decide, CreatorMessage, Intent,
                                            _max_pay_per_video)
 from oblsk_negotiator.pricing import price_ladder, authenticity
 from oblsk_negotiator.qa import (CampaignBrief, classify_question_topic,
-                                answer_from_brief, signals_ready_for_offer)
+                                answer_from_brief, signals_ready_for_offer,
+                                can_answer)
 from oblsk_negotiator.creator_sim import SimCreator
 from oblsk_negotiator.prose import render_template
 from oblsk_negotiator.runner import run_negotiation, reject_action
@@ -121,6 +122,22 @@ def test_human_guard_pauses():
 def test_qa_topic_and_answer():
     assert classify_question_topic("what are the deliverables here?") == "deliverables"
     assert len(answer_from_brief("what are the deliverables here?", CampaignBrief())) > 0
+
+
+def test_qa_content_style_is_answered_not_escalated():
+    # "style of content" questions used to fall into `general` and get paged to
+    # a human; they now classify as content_style and answer from the brief.
+    for q in ("what style of content are you looking for?",
+              "what's the vibe / editing style you want?",
+              "any particular tone or aesthetic in mind?"):
+        assert classify_question_topic(q) == "content_style", q
+        assert can_answer(q, CampaignBrief()) is True, q
+    ans = answer_from_brief("what style of content are you looking for?", CampaignBrief())
+    assert "style" in ans.lower() and "$" not in ans
+
+    # Guard against collisions with neighbouring topics.
+    assert classify_question_topic("do i get a round of revisions?") == "revisions"
+    assert classify_question_topic("how many videos do i make?") == "deliverables"
 
 
 def test_qa_budget_routes_to_offer():

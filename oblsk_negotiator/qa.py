@@ -32,6 +32,7 @@ class CampaignBrief:
     revisions: str = "one round of revisions, we keep notes light"
     payment_terms: str = "net-30 after the content goes live, faster pay available"
     creative_freedom: str = "you have creative control, we share a few talking points and let you run with it"
+    content_style: str = "your usual style — we don't over-direct the edit or the voice, whatever feels native to your feed"
     primary_format: Optional[str] = None      # the format the campaign opens on
     allowed_formats: Optional[list] = None     # formats the agent may bundle in
     extra_facts: dict = field(default_factory=dict)
@@ -49,6 +50,12 @@ _TOPIC_KEYWORDS = {
                       "paid", "when do i get"],
     "creative_freedom": ["creative", "script", "say", "freedom", "control",
                          "talking point", "guideline"],
+    # Note: multiword "editing style" (not bare "edit", which is a revisions
+    # keyword) and no bare "voice" (that collides with the voice_template
+    # concept) — these ask what the content should feel like, not who edits it.
+    "content_style": ["style", "vibe", "tone", "aesthetic", "editing style",
+                      "look and feel", "how should it look", "content style",
+                      "style of content"],
     "product": ["product", "brand", "who is", "what is", "about the", "company"],
     "budget": ["budget", "rate", "how much", "pay me", "fee", "price", "cost",
                "does this pay", "have in mind", "what were you thinking",
@@ -124,6 +131,7 @@ def answer_from_brief(question: str, brief: CampaignBrief) -> str:
         "revisions": f"For revisions, {brief.revisions}.",
         "payment_terms": f"On payment, {brief.payment_terms}.",
         "creative_freedom": f"On the creative, {brief.creative_freedom}.",
+        "content_style": f"On the style, {brief.content_style}.",
         "product": (f"It is for {brief.brand}, promoting {brief.product}. Happy to "
                     f"share more from the brief if useful."),
     }
@@ -157,7 +165,8 @@ def build_qa_llm_prompt(question: str, brief: CampaignBrief,
         f"Platform: {brief.platform}", f"Deliverables: {brief.deliverables}",
         f"Timeline: {brief.timeline}", f"Usage rights: {brief.usage_rights}",
         f"Exclusivity: {brief.exclusivity}", f"Revisions: {brief.revisions}",
-        f"Payment: {brief.payment_terms}", f"Creative: {brief.creative_freedom}"])
+        f"Payment: {brief.payment_terms}", f"Creative: {brief.creative_freedom}",
+        f"Content style: {brief.content_style}"])
     system = (
         "You are an experienced influencer-marketing account manager answering a "
         "creator's question over email or DM. Warm, brief, real. Never reveal or "
