@@ -47,7 +47,7 @@ from .campaign import Campaign, load_campaign
 from .ev_engine import CreatorEconomics, ViewModel, deal_to_dict, fit_view_model
 from .pricing import price_ladder
 from .prose import write_message
-from .replay import _WANTS_CALL_RE, Turn, interpret_message
+from .replay import _WANTS_CALL_RE, Turn, heuristic_interpret, interpret_message
 from .state import NegotiationState
 
 # Nearest fit into the platform's closed NegotiatorStrategyKind union (it only
@@ -116,11 +116,14 @@ def _state_from_turns(turns: list[Turn]) -> NegotiationState:
     state = NegotiationState("platform", "platform", "thread")
     last_brand_vc = 1
     for turn in turns:
-        # Read history the same way we read the live message: LLM-first (with a
-        # heuristic fallback offline). The old heuristic-only path let the wrong
-        # dollar figure win on human-phrased offers ("you mentioned $500, we can
-        # do $400"), silently misrepresenting our recorded position.
-        m = interpret_message(turn.text)
+        # History is reconstructed with the deterministic heuristic, not the LLM.
+        # The service is stateless, so state is rebuilt on every poll; running the
+        # LLM over the whole thread each time would be both slow (one call per
+        # past turn) and non-reproducible (the same thread could reconstruct to a
+        # different offer twice). The live incoming message still gets the LLM
+        # (see suggest); the authoritative fix for messy human-phrased offers is a
+        # structured per-thread ledger, which is owned platform-side.
+        m = heuristic_interpret(turn.text)
         if turn.sender == "us":
             if m.ask_total_usd:
                 vc = max(m.ask_video_count or 1, 1)
@@ -243,10 +246,16 @@ def _ev_snapshot(vm: ViewModel, econ: CreatorEconomics) -> dict:
 
 
 def _from_ev_snapshot(snapshot: dict) -> tuple[ViewModel, CreatorEconomics]:
-    e = snapshot["econ"]
-    return (ViewModel.from_dict(snapshot["viewModel"]),
-            CreatorEconomics(conversion_rate=float(e["conversionRate"]),
-                             ltv_usd=float(e["ltvUsd"])))
+    # A malformed snapshot is a bad client payload (-> 400), not a server fault
+    # (-> 500), so surface it as ValueError rather than letting a KeyError/TypeError
+    # bubble up as an unhandled 500.
+    try:
+        e = snapshot["econ"]
+        return (ViewModel.from_dict(snapshot["viewModel"]),
+                CreatorEconomics(conversion_rate=float(e["conversionRate"]),
+                                 ltv_usd=float(e["ltvUsd"])))
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError(f"malformed evSnapshot: {exc}") from exc
 
 
 def suggest(payload: dict, camp: Campaign) -> dict:

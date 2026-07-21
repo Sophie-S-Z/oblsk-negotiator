@@ -141,36 +141,46 @@ def test_ev_snapshot_freezes_pricing_across_turns():
     assert out2b["agent"]["ladder"] != out1["agent"]["ladder"]
 
 
-def test_history_reconstruction_uses_interpret_message(monkeypatch):
-    # _state_from_turns must read past turns through the LLM-capable
-    # interpret_message (not the heuristic), so a human-phrased brand offer whose
-    # own number is not the last dollar in the sentence is still recorded
-    # correctly. Simulate the LLM reading "$400" as our offer.
+def test_history_reconstruction_is_deterministic_and_heuristic(monkeypatch):
+    # History is rebuilt with the deterministic heuristic, not the LLM: the same
+    # thread reconstructs to the same offer every time (no per-request LLM drift
+    # on recorded positions), and the interpreter is called at most once — for
+    # the single live message, never once-per-history-turn.
     import oblsk_negotiator.service as svc
-    from oblsk_negotiator.behavior_tree import CreatorMessage, Intent
 
     real = svc.interpret_message
+    calls = {"n": 0}
 
-    def fake(text):
-        if "we can do" in text.lower():
-            return CreatorMessage(Intent.NEGOTIATING, ask_total_usd=400.0,
-                                  ask_video_count=1, raw_text=text)
+    def spy(text):
+        calls["n"] += 1
         return real(text)
 
-    monkeypatch.setattr(svc, "interpret_message", fake)
-    out = suggest({
+    monkeypatch.setattr(svc, "interpret_message", spy)
+    payload = {
         "medianViewsPerVideo": 150000,
         "messages": [
-            _msg("creator", "What's the budget?", 1),
-            # Our number ($400) is NOT the last dollar figure — the heuristic
-            # would wrongly latch onto the creator's $500.
-            _msg("brand", "We can do $400, though I know you were hoping for $500.", 2),
+            _msg("creator", "What were you thinking budget-wise?", 1),
+            _msg("brand", "We could allocate $2,000 total for one cross-posted video.", 2),
             _msg("creator", "Following up — still keen!", 3),
         ],
-    }, CAMP)
-    # The standing offer the agent holds is $400, not $500.
-    assert out["agent"]["deal"]["flat_per_video"] == 400.0
-    assert "$400" in out["message"]
+    }
+    out1 = suggest(payload, CAMP)
+    assert calls["n"] == 1                       # live message only, not history
+    out2 = suggest(payload, CAMP)
+    assert out1["agent"]["deal"] == out2["agent"]["deal"]   # reproducible
+    assert out1["agent"]["deal"]["flat_per_video"] == 2000.0
+
+
+def test_malformed_ev_snapshot_is_client_error():
+    # A corrupt resent snapshot is a bad client payload (-> 400 via ValueError),
+    # not an unhandled 500.
+    base = [_msg("creator", "What did you have in mind?", 1)]
+    for bad in ({"econ": {"conversionRate": 0.0005, "ltvUsd": 80}},        # no viewModel
+                {"viewModel": {"family": "lognormal"}},                    # no econ / params
+                {"viewModel": {"family": "lognormal", "params": {}}, "econ": {}}):
+        with pytest.raises(ValueError, match="evSnapshot"):
+            suggest({"medianViewsPerVideo": 150000, "messages": base,
+                     "evSnapshot": bad}, CAMP)
 
 
 def test_bad_payloads_raise():
